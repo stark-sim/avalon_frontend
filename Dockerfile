@@ -10,6 +10,7 @@ COPY package*.json ./
 RUN mkdir /usr/local/sbin
 RUN ln -s /usr/local/bin/node /usr/local/sbin/node
 # install dependencies
+RUN npm install -g npm@9.2.0
 RUN npm install
 # copy files and folders to the current working directory (i.e. 'app' folder)
 COPY . .
