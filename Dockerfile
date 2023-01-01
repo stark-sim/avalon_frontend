@@ -1,4 +1,4 @@
-FROM node:alpine AS builder
+FROM node:16-alpine AS builder
 
 LABEL maintainer="StarkSim<gooda159753@163.com>"
 
@@ -8,7 +8,7 @@ WORKDIR /src
 COPY package*.json ./
 # create a Link for ARM64 building
 RUN mkdir /usr/local/sbin
-RUN ln -s /usr/bin/node /usr/local/sbin/node
+RUN ln -s /usr/local/bin/node /usr/local/sbin/node
 # install dependencies
 RUN npm install
 # copy files and folders to the current working directory (i.e. 'app' folder)
