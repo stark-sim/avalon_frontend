@@ -1,8 +1,8 @@
-FROM node:lts-alpine AS builder
+FROM node:alpine AS builder
 
 LABEL maintainer="StarkSim<gooda159753@163.com>"
 
-# make the 'app' folder the current working directory
+# make the 'src' folder the current working directory
 WORKDIR /src
 # copy 'package.json' to install dependencies
 COPY package*.json ./
