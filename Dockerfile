@@ -7,6 +7,7 @@ WORKDIR /src
 # copy 'package.json' to install dependencies
 COPY package*.json ./
 # create a Link for ARM64 building
+RUN mkdir /usr/local/sbin
 RUN ln -s /usr/bin/node /usr/local/sbin/node
 # install dependencies
 RUN npm install
