@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  app:
+    image: starksim/avalon_frontend
+    ports:
+      - "80:80"
+    # volumes:
+    #   - ./config.yaml:/app/github.com/stark-sim/avalon_backend/config.yaml
+    container_name: "avalon_frontend"
+    networks:
+      default:
+        aliases:
+          - avalon_frontend
+
+networks:
+  default:
+    name: graphql_federation
+    external: true
