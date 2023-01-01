@@ -7,15 +7,15 @@ WORKDIR /src
 # copy 'package.json' to install dependencies
 COPY package*.json ./
 # create a Link for ARM64 building
-RUN mkdir /usr/local/sbin
-RUN ln -s /usr/local/bin/node /usr/local/sbin/node
+# RUN mkdir /usr/local/sbin
+# RUN ln -s /usr/local/bin/node /usr/local/sbin/node
 # install dependencies
-RUN npm install -g npm@9.2.0
-RUN npm install
+# RUN npm install -g npm@9.2.0
+RUN yarn install
 # copy files and folders to the current working directory (i.e. 'app' folder)
 COPY . .
 # build app for production with minification
-RUN npm run build
+RUN yarn run build
 
 
 FROM nginx:alpine
