@@ -24,7 +24,7 @@
       {{ character.name }}
     </p> -->
     
-    <router-view></router-view>
+    <RouterView />
   </div>
 </template>
 

@@ -1,8 +1,9 @@
 <script setup>
-import { ref } from 'vue'
-
+import { reactive, ref } from 'vue'
+import { watch } from 'vue'
 import gql from 'graphql-tag'
 import { useQuery } from '@vue/apollo-composable'
+import router from '../router';
 
 const LOGIN_QUERY = gql`
   query login($req: loginReq!) {
@@ -14,18 +15,65 @@ const LOGIN_QUERY = gql`
     }
   }
 `
-const { result, loading, error } = useQuery(LOGIN_QUERY, {
-  "req": {
-    "phone": "18925537107"
-  }
-});
 
-let phone = ref("")
+const formSize = ref('default')
+const ruleFormRef = ref()
+const ruleForm = reactive({
+  phone: ''
+})
+
+const rules = reactive({
+  phone: [
+    { required: true, message: '请输入手机号', trigger: 'blur' },
+    { min: 11, max: 11, message: '11 位谢谢', trigger: 'blur' },
+  ]
+})
+
+const submitForm = async (formEl) => {
+  if (!formEl) return
+  await formEl.validate((valid, fields) => {
+    if (valid) {
+      const options = ref({
+        clientId: "default"
+      })
+      console.log('submit!')
+      const { result, loading, error } = useQuery(LOGIN_QUERY, {
+        "req": {
+          "phone": ruleForm.phone
+        }
+      }, options);
+      watch(result, value => {
+        console.log(value)
+        localStorage.setItem("userID", value.login.id)
+        router.push('/')
+      })
+    } else {
+      console.log('error submit!', fields)
+    }
+  })
+}
+
+const resetForm = (formEl) => {
+  if (!formEl) return
+  formEl.resetFields()
+}
 </script>
 
 <template>
   <h1>"登录"</h1>
-  <p>{{ result }}</p>
+  <el-form ref="ruleFormRef" :model="ruleForm" :rules="rules" label-width="120px" class="demo-ruleForm" :size="formSize"
+    status-icon>
+    <el-form-item label="手机号" prop="phone">
+      <el-input v-model="ruleForm.phone" />
+    </el-form-item>
+    <el-form-item>
+      <el-button type="primary" @click="submitForm(ruleFormRef)">
+        登录
+      </el-button>
+      <el-button @click="resetForm(ruleFormRef)">重置</el-button>
+    </el-form-item>
+  </el-form>
+  <!-- <p>{{ result }}</p> -->
 </template>
 
 <style scoped>
