@@ -26,6 +26,10 @@ function setUserToken(userID) {
     localStorage.setItem("userID", userTokenString)
 }
 
+function deleteUserToken() {
+    localStorage.removeItem("userID")
+}
+
 export {
-    getUserToken, setUserToken
+    getUserToken, setUserToken, deleteUserToken
 }
