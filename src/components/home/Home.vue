@@ -1,14 +1,17 @@
 <script setup>
 import { ref } from 'vue'
 
+import { getUserToken } from '../../utils/authentication'
+
 import gql from 'graphql-tag'
 import { useQuery } from '@vue/apollo-composable'
 
 import {useRouter} from "vue-router"; // 导入路由
 const router = useRouter() // 实例化路由
 
-let userID = localStorage.getItem("userID")
+let userID = getUserToken()
 // 没有当前用户 id 则去登录页
+console.log(userID)
 if (userID == null) {
   router.push("/login")
 }

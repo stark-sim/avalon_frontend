@@ -4,6 +4,7 @@ import { watch } from 'vue'
 import gql from 'graphql-tag'
 import { useQuery } from '@vue/apollo-composable'
 import router from '../router';
+import {setUserToken} from '../utils/authentication'
 
 const LOGIN_QUERY = gql`
   query login($req: loginReq!) {
@@ -44,7 +45,7 @@ const submitForm = async (formEl) => {
       }, options);
       watch(result, value => {
         console.log(value)
-        localStorage.setItem("userID", value.login.id)
+        setUserToken(value.login.id)
         router.push('/')
       })
     } else {
@@ -60,7 +61,7 @@ const resetForm = (formEl) => {
 </script>
 
 <template>
-  <h1>"登录"</h1>
+  <h1>登录页</h1>
   <el-form ref="ruleFormRef" :model="ruleForm" :rules="rules" label-width="120px" class="demo-ruleForm" :size="formSize"
     status-icon>
     <el-form-item label="手机号" prop="phone">
@@ -70,7 +71,9 @@ const resetForm = (formEl) => {
       <el-button type="primary" @click="submitForm(ruleFormRef)">
         登录
       </el-button>
-      <el-button @click="resetForm(ruleFormRef)">重置</el-button>
+      <el-button @click="resetForm(ruleFormRef)">
+        重置
+      </el-button>
     </el-form-item>
   </el-form>
   <!-- <p>{{ result }}</p> -->

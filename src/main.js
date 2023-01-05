@@ -1,8 +1,8 @@
 import { createApp, provide, h } from "vue";
 import {
-  DefaultApolloClient,
-  ApolloClients,
-  provideApolloClients,
+    DefaultApolloClient,
+    ApolloClients,
+    provideApolloClients,
 } from "@vue/apollo-composable";
 import { ApolloClient, InMemoryCache } from "@apollo/client/core";
 import "./style.css";
@@ -12,18 +12,18 @@ import router from "./router";
 
 const cache = new InMemoryCache();
 const superClient = new ApolloClient({
-  cache,
-  // uri: 'https://rickandmortyapi.com/graphql',
-  // uri: 'http://159.75.243.79:8080/graphql',
-  uri: "http://159.75.243.79:4001",
+    cache,
+    // uri: 'https://rickandmortyapi.com/graphql',
+    // uri: 'http://159.75.243.79:8080/graphql',
+    uri: "http://159.75.243.79:4001",
 });
 const casClient = new ApolloClient({
-  cache,
-  uri: "http://159.75.243.79:8080/graphql",
+    cache,
+    uri: "http://159.75.243.79:8080/graphql",
 });
 const avalonClient = new ApolloClient({
-  cache,
-  uri: "http://159.75.243.79:8082/graphql",
+    cache,
+    uri: "http://159.75.243.79:8082/graphql",
 });
 
 // const app = createApp({
@@ -39,9 +39,9 @@ const avalonClient = new ApolloClient({
 const app = createApp(App);
 
 provideApolloClients({
-  default: superClient,
-  cas: casClient,
-  avalon: avalonClient,
+    default: superClient,
+    cas: casClient,
+    avalon: avalonClient,
 });
 
 app.use(router).mount("#app");
