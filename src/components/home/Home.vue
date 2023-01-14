@@ -1,35 +1,4 @@
-<template>
-  <el-container>
-    <el-header>Header</el-header>
-    <el-main>Main
-      <div class="main">
-        <div class="mainButton">
-          <el-button type="primary" :icon="ArrowRight" @click="openCreateRoom">创建房间</el-button>
-        </div>
-        <div class="mainButton">
-          <el-button type="primary" :icon="ArrowRight" @click="openJoinRoom">加入房间</el-button>
-        </div>
-        <div class="mainButton">
-          <el-button type="primary" :icon="ArrowRight" @click="logout()">退出登录</el-button>
-        </div>
-      </div>
-    </el-main>
-  </el-container>
-</template>
-  
-<style scoped>
-.read-the-docs {
-  color: #888;
-}
-
-.mainButton {
-  margin-left: 1%;
-  margin-top: 3%;
-  margin-right: 1%;
-  margin-bottom: 3%;
-}
-</style>
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 
 import { deleteUserToken, getUserToken } from '../../utils/authentication'
@@ -99,3 +68,36 @@ function joinRoom() {
 }
 
 </script>
+
+<template>
+  <el-container>
+    <el-header>Header</el-header>
+    <el-main>Main
+      <div class="main">
+        <div class="mainButton">
+          <el-button type="primary" :icon="ArrowRight" @click="openCreateRoom">创建房间</el-button>
+        </div>
+        <div class="mainButton">
+          <el-button type="primary" :icon="ArrowRight" @click="openJoinRoom">加入房间</el-button>
+        </div>
+        <div class="mainButton">
+          <el-button type="primary" :icon="ArrowRight" @click="logout()">退出登录</el-button>
+        </div>
+      </div>
+    </el-main>
+  </el-container>
+</template>
+  
+<style scoped>
+.read-the-docs {
+  color: #888;
+}
+
+.mainButton {
+  margin-left: 1%;
+  margin-top: 3%;
+  margin-right: 1%;
+  margin-bottom: 3%;
+}
+</style>
+

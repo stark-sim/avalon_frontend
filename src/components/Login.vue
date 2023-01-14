@@ -1,10 +1,11 @@
-<script setup>
+<script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { watch } from 'vue'
 import gql from 'graphql-tag'
 import { useQuery } from '@vue/apollo-composable'
 import router from '../router';
 import {setUserToken} from '../utils/authentication'
+import { FormInstance } from 'element-plus';
 
 const LOGIN_QUERY = gql`
   query login($req: loginReq!) {
@@ -30,7 +31,7 @@ const rules = reactive({
   ]
 })
 
-const submitForm = async (formEl) => {
+const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return
   await formEl.validate((valid, fields) => {
     if (valid) {
@@ -54,7 +55,7 @@ const submitForm = async (formEl) => {
   })
 }
 
-const resetForm = (formEl) => {
+const resetForm = (formEl: FormInstance | undefined) => {
   if (!formEl) return
   formEl.resetFields()
 }
