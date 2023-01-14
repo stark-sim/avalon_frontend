@@ -10,6 +10,8 @@ import App from "./App.vue";
 
 import router from "./router";
 
+import "element-plus/dist/index.css";
+
 const cache = new InMemoryCache();
 const superClient = new ApolloClient({
     cache,
