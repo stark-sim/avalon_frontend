@@ -10,6 +10,7 @@ import { ArrowRight } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 import { useRouter } from "vue-router"; // 导入路由
+import { JoinRoom } from '../../gqls/room'
 const router = useRouter() // 实例化路由
 
 let userID = getUserToken()
@@ -52,6 +53,7 @@ const openJoinRoom = () => {
       type: "success",
       message: `正在加入 ${value} 房间`
     })
+    JoinRoom(userID, value)
   }).catch(() => {
     ElMessage({
       type: 'info',
@@ -61,10 +63,6 @@ const openJoinRoom = () => {
 }
 
 function createRoom() {
-}
-
-function joinRoom() {
-
 }
 
 </script>
