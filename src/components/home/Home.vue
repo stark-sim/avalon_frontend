@@ -7,12 +7,11 @@ import { ArrowRight } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 import { useRouter } from "vue-router"; // 导入路由
-import { JoinRoom } from '../../gqls/room'
+import { CreateRoom, JoinRoom } from '../../gqls/room'
 const router = useRouter() // 实例化路由
 
 let userID = getUserToken()
 // 没有当前用户 id 则去登录页
-console.log(userID)
 if (userID == "") {
   router.push("/login")
 }
@@ -33,6 +32,15 @@ const openCreateRoom = () => {
     inputPlaceholder: "请输入房间名称",
     center: true,
   }).then(({ value }) => {
+    CreateRoom(value).then((value) => {
+      // 创建的房间 id
+      let roomID = value
+      console.log(roomID)
+      // 随后加入房间
+      JoinRoom(userID, roomID).then((value) => {
+        roomUserID.value = value
+      })
+    })
     ElMessage({
       type: "success",
       message: `创建房间 ${value}`,

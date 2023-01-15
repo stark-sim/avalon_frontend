@@ -26,13 +26,44 @@ const JoinRoom = async (userID: string, roomID: string): Promise<string> => {
   let roomUserID = "";
   try {
     // 同步操作
-    const response = await joinRoom()
+    const response = await joinRoom();
+    const data = response?.data;
+    roomUserID = data.joinRoom.id;
+  } catch (error) {
+    console.log(error);
+  }
+  return roomUserID;
+};
+
+const CREATE_ROOM = gql`
+  mutation ($req: CreateRoomInput!) {
+    createRoom(req: $req) {
+      id
+      name
+      createdBy
+    }
+  }
+`;
+
+const CreateRoom = async (roomName: string): Promise<string> => {
+  const { mutate: createRoom } = useMutation(CREATE_ROOM, () => ({
+    variables: {
+      req: {
+        name: roomName,
+      },
+    },
+    clientId: "default",
+  }));
+  let roomID = "";
+  try {
+    const response = await createRoom()
     const data = response?.data
-    roomUserID = data.joinRoom.id
+    roomID = data.createRoom.id
+    console.log(roomID)
   } catch (error) {
     console.log(error)
   }
-  return roomUserID
-}
+  return roomID
+};
 
-export { JoinRoom };
+export { JoinRoom, CreateRoom };
