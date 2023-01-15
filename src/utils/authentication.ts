@@ -1,4 +1,4 @@
-function getUserToken(): string | null {
+function getUserToken(): string {
   let userTokenString = localStorage.getItem("userID");
   if (userTokenString != null) {
     // 检查过期
@@ -6,12 +6,12 @@ function getUserToken(): string | null {
     let userTokenObj = JSON.parse(userTokenString);
     console.log(userTokenObj);
     if (userTokenObj.createdAt + 60000 < new Date().getTime()) {
-      return null;
+      return "";
     } else {
       return userTokenObj.userID;
     }
   } else {
-    return null;
+    return "";
   }
 }
 

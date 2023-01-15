@@ -12,7 +12,7 @@ const JOIN_ROOM = gql`
   }
 `;
 
-function JoinRoom(userID: string, roomID: string) {
+const JoinRoom = async (userID: string, roomID: string): Promise<string> => {
   const { mutate: joinRoom } = useMutation(JOIN_ROOM, () => ({
     variables: {
       req: {
@@ -22,9 +22,17 @@ function JoinRoom(userID: string, roomID: string) {
     },
     clientId: "default",
   }));
-  
-  const res  = joinRoom()
-  console.log(res)
+  // 定义返回结果
+  let roomUserID = "";
+  try {
+    // 同步操作
+    const response = await joinRoom()
+    const data = response?.data
+    roomUserID = data.joinRoom.id
+  } catch (error) {
+    console.log(error)
+  }
+  return roomUserID
 }
 
 export { JoinRoom };

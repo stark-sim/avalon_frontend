@@ -3,9 +3,6 @@ import { ref } from 'vue'
 
 import { deleteUserToken, getUserToken } from '../../utils/authentication'
 
-import gql from 'graphql-tag'
-import { useQuery } from '@vue/apollo-composable'
-
 import { ArrowRight } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -16,7 +13,7 @@ const router = useRouter() // 实例化路由
 let userID = getUserToken()
 // 没有当前用户 id 则去登录页
 console.log(userID)
-if (userID == null) {
+if (userID == "") {
   router.push("/login")
 }
 // TODO 检查有没有在某个房间，有的话直接去房间页面
@@ -45,15 +42,21 @@ const openCreateRoom = () => {
   })
 }
 
+let roomUserID = ref<string>()
+
 const openJoinRoom = () => {
   ElMessageBox.prompt('请输入房间号', {
     confirmButtonText: "加入",
   }).then(({ value }) => {
+    // 异步请求处理数据
+    JoinRoom(userID, value).then((value) => {
+      roomUserID.value = value
+    })
+    // 提示
     ElMessage({
       type: "success",
       message: `正在加入 ${value} 房间`
     })
-    JoinRoom(userID, value)
   }).catch(() => {
     ElMessage({
       type: 'info',
@@ -70,17 +73,20 @@ function createRoom() {
 <template>
   <el-container>
     <el-header>Header</el-header>
-    <el-main>Main
+    <el-main>
       <div class="main">
-        <div class="mainButton">
-          <el-button type="primary" :icon="ArrowRight" @click="openCreateRoom">创建房间</el-button>
-        </div>
-        <div class="mainButton">
-          <el-button type="primary" :icon="ArrowRight" @click="openJoinRoom">加入房间</el-button>
-        </div>
-        <div class="mainButton">
-          <el-button type="primary" :icon="ArrowRight" @click="logout()">退出登录</el-button>
-        </div>
+        <el-space direction="vertical" wrap>
+          <div class="mainButton">
+            <el-button type="primary" :icon="ArrowRight" @click="openCreateRoom">创建房间</el-button>
+          </div>
+          <div class="mainButton">
+            <el-button type="primary" :icon="ArrowRight" @click="openJoinRoom">加入房间</el-button>
+          </div>
+          <div v-if="roomUserID">{{ roomUserID }}</div>
+          <div class="mainButton">
+            <el-button type="primary" :icon="ArrowRight" @click="logout()">退出登录</el-button>
+          </div>
+        </el-space>
       </div>
     </el-main>
   </el-container>
