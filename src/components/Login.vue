@@ -4,7 +4,7 @@ import { watch } from 'vue'
 import gql from 'graphql-tag'
 import { useQuery } from '@vue/apollo-composable'
 import router from '../router';
-import {setUserToken} from '../utils/authentication'
+import { setUserToken } from '../utils/authentication'
 import { FormInstance } from 'element-plus';
 
 const LOGIN_QUERY = gql`
@@ -45,7 +45,6 @@ const submitForm = async (formEl: FormInstance | undefined) => {
         }
       }, options);
       watch(result, value => {
-        console.log(value)
         setUserToken(value.login.id)
         router.push('/')
       })

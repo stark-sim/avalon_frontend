@@ -1,5 +1,6 @@
-import { useMutation } from "@vue/apollo-composable";
+import { useMutation, useSubscription } from "@vue/apollo-composable";
 import gql from "graphql-tag";
+import { watch } from "vue";
 
 const JOIN_ROOM = gql`
   mutation ($req: CreateRoomUserInput!) {
@@ -56,14 +57,63 @@ const CreateRoom = async (roomName: string): Promise<string> => {
   }));
   let roomID = "";
   try {
-    const response = await createRoom()
-    const data = response?.data
-    roomID = data.createRoom.id
-    console.log(roomID)
+    const response = await createRoom();
+    const data = response?.data;
+    roomID = data.createRoom.id;
+    console.log(roomID);
   } catch (error) {
-    console.log(error)
+    console.log(error);
   }
-  return roomID
+  return roomID;
 };
 
-export { JoinRoom, CreateRoom };
+interface User {
+  id: string;
+  name: string;
+  phone: string;
+}
+
+interface RoomUser {
+  id: string;
+  roomID: string;
+  user: User;
+}
+
+const GET_ROOM_USERS = gql`
+  subscription ($req: RoomRequest) {
+    getRoomUsers(req: $req) {
+      id
+      user {
+        id
+        name
+        phone
+      }
+      roomID
+      createdAt
+    }
+  }
+`;
+
+const GetRoomUsers = (roomID: string) => {
+  const { result } = useSubscription(
+    GET_ROOM_USERS,
+    () => ({
+      req: {
+        id: roomID
+      }
+    }),
+    {
+      clientId: "avalon"
+    }
+  )
+  console.log("subscription...")
+  watch(
+    result,
+    data => {
+      console.log(data)
+    }
+  )
+}
+
+export { JoinRoom, CreateRoom, GetRoomUsers };
+export type { RoomUser, User };

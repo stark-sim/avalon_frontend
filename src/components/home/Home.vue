@@ -39,6 +39,7 @@ const openCreateRoom = () => {
       // 随后加入房间
       JoinRoom(userID, roomID).then((value) => {
         roomUserID.value = value
+        router.push("/room")
       })
     })
     ElMessage({
@@ -59,6 +60,7 @@ const openJoinRoom = () => {
     // 异步请求处理数据
     JoinRoom(userID, value).then((value) => {
       roomUserID.value = value
+      router.push("/room")
     })
     // 提示
     ElMessage({
