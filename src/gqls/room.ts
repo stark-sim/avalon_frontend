@@ -21,7 +21,7 @@ const JoinRoom = async (userID: string, roomID: string): Promise<string> => {
         roomID: roomID,
       },
     },
-    clientId: "default",
+    clientId: "super",
   }));
   // 定义返回结果
   let roomUserID = "";
@@ -53,7 +53,7 @@ const CreateRoom = async (roomName: string): Promise<string> => {
         name: roomName,
       },
     },
-    clientId: "default",
+    clientId: "super",
   }));
   let roomID = "";
   try {
@@ -102,9 +102,6 @@ const GetRoomUsers = (roomID: string) => {
         id: roomID
       }
     }),
-    {
-      clientId: "avalon"
-    }
   )
   console.log("subscription...")
   watch(

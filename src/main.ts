@@ -36,6 +36,26 @@ const httpLink = new HttpLink({
 const wsLink = new GraphQLWsLink(
   createClient({
     url: "ws://159.75.243.79:8082/graphql",
+    // lazy: false,
+    on: {
+      connecting: ()=> {
+        console.log("connecting")
+      },
+      opened: () => {
+        console.log("opened")
+      },
+      ping: (received, payload) => {
+        console.log(received)
+        console.log(payload)
+      },
+      connected: () => {
+        console.log("connected")
+      },
+      error: (event) => {
+        console.log(event)
+        console.log("error")
+      }
+    }
   })
 )
 
@@ -59,7 +79,9 @@ const avalonClient = new ApolloClient({
 })
 
 provideApolloClients({
-  default: superClient,
+  // useSubscription 改不了 clientID，暂时解决方法
+  default: avalonClient,
+  super: superClient,
   cas: casClient,
   avalon: avalonClient,
 })

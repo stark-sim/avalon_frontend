@@ -36,7 +36,7 @@ const submitForm = async (formEl: FormInstance | undefined) => {
   await formEl.validate((valid, fields) => {
     if (valid) {
       const options = ref({
-        clientId: "default"
+        clientId: "super"
       })
       console.log('submit!')
       const { result, loading, error } = useQuery(LOGIN_QUERY, {
