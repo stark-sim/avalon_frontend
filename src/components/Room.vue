@@ -6,7 +6,11 @@ import { getUserToken } from '../utils/authentication';
 import { GetRoomUsers } from '../gqls/room'
 
 // 在房间中维持着 roomID
-let roomID: string = "1614667364896677888"
+const props = defineProps<{
+  roomID: string
+}>()
+let roomID: string = props.roomID!
+console.log(roomID)
 let userID = getUserToken()
 if (userID == "") {
   router.push("/")
@@ -32,12 +36,18 @@ watch(
   <el-container>
     <!-- 展示房间信息 -->
     <el-header>
-      <div>{{ roomID }}</div>
+      <div>房间 ID: {{ roomID }}</div>
     </el-header>
     <!-- 展示玩家 -->
     <el-main>
       <el-space direction="vertical" wrap>
-        <div>{{ roomUsers }}</div>
+        <div v-for="roomUser in roomUsers">
+          {{ roomUser.id }}
+          {{ roomUser.user.id }}
+          {{ roomUser.user.name }}
+          {{ roomUser.user.phone }}
+          {{ roomUser.createdAt }}
+        </div>
       </el-space>
     </el-main>
   </el-container>

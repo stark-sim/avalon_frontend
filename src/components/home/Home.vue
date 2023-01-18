@@ -18,7 +18,6 @@ if (userID == "") {
 // TODO 检查有没有在某个房间，有的话直接去房间页面
 
 function logout() {
-  console.log("logout")
   deleteUserToken()
   router.push("/login")
 }
@@ -38,20 +37,23 @@ const openCreateRoom = () => {
       console.log(roomID)
       // 随后加入房间
       JoinRoom(userID, roomID).then((value) => {
-        roomUserID.value = value
-        router.push("/room")
+        // 跳转到对应房间页面
+      router.push({
+        path: "/room",
+        query: {
+          roomID: value.roomID
+        }
+      })
       })
     })
     ElMessage({
       type: "success",
-      message: `创建房间 ${value}`,
+      message: `创建房间 ${value}，正在进入`,
       showClose: true,
       center: true,
     })
   })
 }
-
-let roomUserID = ref<string>()
 
 const openJoinRoom = () => {
   ElMessageBox.prompt('请输入房间号', {
@@ -59,8 +61,13 @@ const openJoinRoom = () => {
   }).then(({ value }) => {
     // 异步请求处理数据
     JoinRoom(userID, value).then((value) => {
-      roomUserID.value = value
-      router.push("/room")
+      // 跳转到对应房间页面
+      router.push({
+        path: "/room",
+        query: {
+          roomID: value.roomID
+        }
+      })
     })
     // 提示
     ElMessage({
@@ -92,7 +99,6 @@ function createRoom() {
           <div class="mainButton">
             <el-button type="primary" :icon="ArrowRight" @click="openJoinRoom">加入房间</el-button>
           </div>
-          <div v-if="roomUserID">{{ roomUserID }}</div>
           <div class="mainButton">
             <el-button type="primary" :icon="ArrowRight" @click="logout()">退出登录</el-button>
           </div>

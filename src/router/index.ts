@@ -14,7 +14,8 @@ const routes = [
   {
     path: "/room",
     name: "room",
-    component: () => import('../components/Room.vue')
+    component: () => import('../components/Room.vue'),
+    props: (route: { query: { roomID: string } }) => ({ roomID: route.query.roomID })
   }
 ]
 
