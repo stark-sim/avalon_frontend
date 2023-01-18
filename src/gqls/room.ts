@@ -103,13 +103,13 @@ const GetRoomUsers = (roomID: string) => {
       }
     }),
   )
-  console.log("subscription...")
-  watch(
-    result,
-    data => {
-      console.log(data)
-    }
-  )
+  // watch(
+  //   result,
+  //   data => {
+  //     let roomUsers = data.getRoomUsers
+  //   }
+  // )
+  return result
 }
 
 export { JoinRoom, CreateRoom, GetRoomUsers };

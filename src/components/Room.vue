@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { RoomUser } from '../gqls/room';
 import router from '../router';
 import { getUserToken } from '../utils/authentication';
@@ -12,9 +12,19 @@ if (userID == "") {
   router.push("/")
 }
 // Subscription 来更新房间用户
-// let roomUsers = ref<RoomUser>()
-console.log("fine at here")
-GetRoomUsers(roomID)
+let roomUsers = ref<RoomUser[]>()
+const response = GetRoomUsers(roomID)
+// 刷新用户列表
+watch(
+  response,
+  data => {
+    roomUsers.value = []
+    let _data = data.getRoomUsers
+    for (let i = 0; i < _data.length; i++) {
+      roomUsers.value?.push(_data[i])
+    }
+  }
+)
 
 </script>
 
@@ -27,7 +37,7 @@ GetRoomUsers(roomID)
     <!-- 展示玩家 -->
     <el-main>
       <el-space direction="vertical" wrap>
-        <div></div>
+        <div>{{ roomUsers }}</div>
       </el-space>
     </el-main>
   </el-container>
