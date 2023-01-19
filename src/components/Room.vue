@@ -4,6 +4,8 @@ import { RoomUser } from '../gqls/room';
 import router from '../router';
 import { getUserToken } from '../utils/authentication';
 import { GetRoomUsers } from '../gqls/room'
+import { ArrowRight } from '@element-plus/icons-vue'
+import { LeaveRoom } from '../gqls/room';
 
 // 在房间中维持着 roomID
 const props = defineProps<{
@@ -30,6 +32,14 @@ watch(
   }
 )
 
+// 离开房间，回到主页
+const leaveRoom = () => {
+  LeaveRoom(userID, roomID).then((data) => {
+    console.log(data)
+    router.push("/")
+  })
+}
+
 </script>
 
 <template>
@@ -37,6 +47,7 @@ watch(
     <!-- 展示房间信息 -->
     <el-header>
       <div>房间 ID: {{ roomID }}</div>
+      <el-button type="primary" :icon="ArrowRight" @click="leaveRoom">退出房间</el-button>
     </el-header>
     <!-- 展示玩家 -->
     <el-main>

@@ -27,10 +27,10 @@ const JoinRoom = async (userID: string, roomID: string): Promise<any> => {
     // 同步操作
     const response = await joinRoom();
     const data = response?.data;
-    return data.joinRoom
+    return data.joinRoom;
   } catch (error) {
     console.log(error);
-    return null
+    return null;
   }
 };
 
@@ -75,7 +75,7 @@ interface RoomUser {
   id: string;
   roomID: string;
   user: User;
-  createdAt: Date
+  createdAt: Date;
 }
 
 const GET_ROOM_USERS = gql`
@@ -94,22 +94,45 @@ const GET_ROOM_USERS = gql`
 `;
 
 const GetRoomUsers = (roomID: string) => {
-  const { result } = useSubscription(
-    GET_ROOM_USERS,
-    () => ({
-      req: {
-        id: roomID
-      }
-    }),
-  )
-  // watch(
-  //   result,
-  //   data => {
-  //     let roomUsers = data.getRoomUsers
-  //   }
-  // )
-  return result
-}
+  const { result } = useSubscription(GET_ROOM_USERS, () => ({
+    req: {
+      id: roomID,
+    },
+  }));
+  return result;
+};
 
-export { JoinRoom, CreateRoom, GetRoomUsers };
+const LEAVE_ROOM = gql`
+  mutation ($req: CreateRoomUserInput!) {
+    leaveRoom(req: $req) {
+      id
+      userID
+      roomID
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+const LeaveRoom = async (userID: string, roomID: string) => {
+  const { mutate: leaveRoom } = useMutation(LEAVE_ROOM, () => ({
+    variables: {
+      req: {
+        userID: userID,
+        roomID: roomID,
+      },
+    },
+    clientId: "super",
+  }));
+  try {
+    const response = await leaveRoom();
+    const data = response?.data.leaveRoom;
+    return data;
+  } catch (error) {
+    console.log(error);
+    return null
+  }
+};
+
+export { JoinRoom, CreateRoom, GetRoomUsers, LeaveRoom };
 export type { RoomUser, User };
