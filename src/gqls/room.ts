@@ -1,6 +1,57 @@
-import { useMutation, useSubscription } from "@vue/apollo-composable";
+import { useMutation, useQuery, useSubscription } from "@vue/apollo-composable";
 import gql from "graphql-tag";
-import { watch } from "vue";
+
+const LOGIN = gql`
+  query login($req: loginReq!) {
+    login(req: $req) {
+      id
+      name
+      phone
+      createdAt
+    }
+  }
+`;
+
+const Login = (phone: string) => {
+  const { result, loading, error } = useQuery(
+    LOGIN,
+    {
+      req: {
+        phone: phone,
+      },
+    },
+    {
+      clientId: "default",
+    }
+  );
+  return result;
+};
+
+const GET_JOINED_ROOM = gql`
+  query ($req: UserRequest!) {
+    getJoinedRoom(req: $req) {
+      id
+      name
+      createdAt
+    }
+  }
+`;
+
+const GetJoinedRoom = (userID: string) => {
+  const { result } = useQuery(
+    GET_JOINED_ROOM,
+    {
+      req: {
+        id: userID,
+      },
+    },
+    {
+      fetchPolicy: "no-cache",
+      clientId: "default",
+    }
+  );
+  return result;
+};
 
 const JOIN_ROOM = gql`
   mutation ($req: CreateRoomUserInput!) {
@@ -21,7 +72,7 @@ const JoinRoom = async (userID: string, roomID: string): Promise<any> => {
         roomID: roomID,
       },
     },
-    clientId: "super",
+    clientId: "default",
   }));
   try {
     // 同步操作
@@ -51,7 +102,7 @@ const CreateRoom = async (roomName: string): Promise<string> => {
         name: roomName,
       },
     },
-    clientId: "super",
+    clientId: "default",
   }));
   let roomID = "";
   try {
@@ -94,11 +145,17 @@ const GET_ROOM_USERS = gql`
 `;
 
 const GetRoomUsers = (roomID: string) => {
-  const { result } = useSubscription(GET_ROOM_USERS, () => ({
-    req: {
-      id: roomID,
-    },
-  }));
+  const { result } = useSubscription(
+    GET_ROOM_USERS,
+    () => ({
+      req: {
+        id: roomID,
+      },
+    }),
+    {
+      clientId: "avalon",
+    }
+  );
   return result;
 };
 
@@ -122,7 +179,7 @@ const LeaveRoom = async (userID: string, roomID: string) => {
         roomID: roomID,
       },
     },
-    clientId: "super",
+    clientId: "default",
   }));
   try {
     const response = await leaveRoom();
@@ -130,9 +187,9 @@ const LeaveRoom = async (userID: string, roomID: string) => {
     return data;
   } catch (error) {
     console.log(error);
-    return null
+    return null;
   }
 };
 
-export { JoinRoom, CreateRoom, GetRoomUsers, LeaveRoom };
+export { Login, JoinRoom, CreateRoom, GetRoomUsers, LeaveRoom, GetJoinedRoom };
 export type { RoomUser, User };

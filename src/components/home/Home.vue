@@ -1,30 +1,58 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, onUpdated, ref, watch } from "vue";
 
-import { deleteUserToken, getUserToken } from '../../utils/authentication'
+import { deleteUserToken, getUserToken } from "../../utils/authentication";
 
-import { ArrowRight } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ArrowRight } from "@element-plus/icons-vue";
+import {
+  ElButton,
+  ElContainer,
+  ElHeader,
+  ElMain,
+  ElMessage,
+  ElMessageBox,
+  ElSpace,
+} from "element-plus";
 
 import { useRouter } from "vue-router"; // 导入路由
-import { CreateRoom, JoinRoom } from '../../gqls/room'
-const router = useRouter() // 实例化路由
+import { CreateRoom, JoinRoom, GetJoinedRoom } from "../../gqls/room";
+const router = useRouter(); // 实例化路由
 
-let userID = getUserToken()
+let userID = getUserToken();
 // 没有当前用户 id 则去登录页
 if (userID == "") {
-  router.push("/login")
+  router.push("/login");
 }
-// TODO 检查有没有在某个房间，有的话直接去房间页面
+
+// 检查有没有在某个房间，有的话直接去房间页面
+const getJoinedRoom = () => {
+  let result = GetJoinedRoom(userID);
+  console.log("this is fine");
+  watch(result, (data) => {
+    console.log(data);
+    if (data.getJoinedRoom != null) {
+      router.push({
+        path: "/room",
+        query: {
+          roomID: data.getJoinedRoom.id
+        }
+      })
+    }
+  });
+};
+
+onMounted(() => {
+  getJoinedRoom()
+})
 
 function logout() {
-  deleteUserToken()
-  router.push("/login")
+  deleteUserToken();
+  router.push("/login");
 }
 
 const openCreateRoom = () => {
   ElMessageBox({
-    title: '创建房间',
+    title: "创建房间",
     showCancelButton: false,
     confirmButtonText: "创建",
     showInput: true,
@@ -33,58 +61,56 @@ const openCreateRoom = () => {
   }).then(({ value }) => {
     CreateRoom(value).then((value) => {
       // 创建的房间 id
-      let roomID = value
-      console.log(roomID)
+      let roomID = value;
+      console.log(roomID);
       // 随后加入房间
       JoinRoom(userID, roomID).then((value) => {
         // 跳转到对应房间页面
-      router.push({
-        path: "/room",
-        query: {
-          roomID: value.roomID
-        }
-      })
-      })
-    })
+        router.push({
+          path: "/room",
+          query: {
+            roomID: value.roomID,
+          },
+        });
+      });
+    });
     ElMessage({
       type: "success",
       message: `创建房间 ${value}，正在进入`,
       showClose: true,
       center: true,
-    })
-  })
-}
+    });
+  });
+};
 
 const openJoinRoom = () => {
-  ElMessageBox.prompt('请输入房间号', {
+  ElMessageBox.prompt("请输入房间号", {
     confirmButtonText: "加入",
-  }).then(({ value }) => {
-    // 异步请求处理数据
-    JoinRoom(userID, value).then((value) => {
-      // 跳转到对应房间页面
-      router.push({
-        path: "/room",
-        query: {
-          roomID: value.roomID
-        }
-      })
-    })
-    // 提示
-    ElMessage({
-      type: "success",
-      message: `正在加入 ${value} 房间`
-    })
-  }).catch(() => {
-    ElMessage({
-      type: 'info',
-      message: `取消加入`
-    })
   })
-}
-
-function createRoom() {
-}
-
+    .then(({ value }) => {
+      // 异步请求处理数据
+      JoinRoom(userID, value).then((value) => {
+        // 跳转到对应房间页面
+        router.push({
+          path: "/room",
+          query: {
+            roomID: value.roomID,
+          },
+        });
+      });
+      // 提示
+      ElMessage({
+        type: "success",
+        message: `正在加入 ${value} 房间`,
+      });
+    })
+    .catch(() => {
+      ElMessage({
+        type: "info",
+        message: `取消加入`,
+      });
+    });
+};
 </script>
 
 <template>
@@ -94,20 +120,26 @@ function createRoom() {
       <div class="main">
         <el-space direction="vertical" wrap>
           <div class="mainButton">
-            <el-button type="primary" :icon="ArrowRight" @click="openCreateRoom">创建房间</el-button>
+            <el-button type="primary" :icon="ArrowRight" @click="openCreateRoom"
+              >创建房间</el-button
+            >
           </div>
           <div class="mainButton">
-            <el-button type="primary" :icon="ArrowRight" @click="openJoinRoom">加入房间</el-button>
+            <el-button type="primary" :icon="ArrowRight" @click="openJoinRoom"
+              >加入房间</el-button
+            >
           </div>
           <div class="mainButton">
-            <el-button type="primary" :icon="ArrowRight" @click="logout()">退出登录</el-button>
+            <el-button type="primary" :icon="ArrowRight" @click="logout"
+              >退出登录</el-button
+            >
           </div>
         </el-space>
       </div>
     </el-main>
   </el-container>
 </template>
-  
+
 <style scoped>
 .read-the-docs {
   color: #888;
@@ -120,4 +152,3 @@ function createRoom() {
   margin-bottom: 3%;
 }
 </style>
-
