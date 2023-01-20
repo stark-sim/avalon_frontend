@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useSubscription } from "@vue/apollo-composable";
 import gql from "graphql-tag";
+import { Ref } from "vue";
 
 const LOGIN = gql`
   query login($req: loginReq!) {
@@ -144,7 +145,7 @@ const GET_ROOM_USERS = gql`
   }
 `;
 
-const GetRoomUsers = (roomID: string) => {
+const GetRoomUsers = (roomID: string, enabled: Ref<boolean>) => {
   const { result } = useSubscription(
     GET_ROOM_USERS,
     () => ({
@@ -152,9 +153,10 @@ const GetRoomUsers = (roomID: string) => {
         id: roomID,
       },
     }),
-    {
+    () => ({
       clientId: "avalon",
-    }
+      enabled: enabled.value
+    })
   );
   return result;
 };

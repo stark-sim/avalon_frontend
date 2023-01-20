@@ -6,6 +6,7 @@ import { getUserToken } from '../utils/authentication';
 import { GetRoomUsers } from '../gqls/room'
 import { ArrowRight } from '@element-plus/icons-vue'
 import { LeaveRoom } from '../gqls/room';
+import { GetRoomOngoingGame, CreateGame } from '../gqls/game'
 
 // 在房间中维持着 roomID
 const props = defineProps<{
@@ -17,9 +18,12 @@ let userID = getUserToken()
 if (userID == "") {
   router.push("/")
 }
+
 // Subscription 来更新房间用户
 let roomUsers = ref<RoomUser[]>()
-const response = GetRoomUsers(roomID)
+let fetchingUsers = ref<boolean>(true)
+const response = GetRoomUsers(roomID, fetchingUsers)
+
 // 刷新用户列表
 watch(
   response,
@@ -35,8 +39,28 @@ watch(
 // 离开房间，回到主页
 const leaveRoom = () => {
   LeaveRoom(userID, roomID).then((data) => {
-    console.log(data)
     router.push("/")
+  })
+}
+
+// 获取正在进行中的游戏
+let fetchingGame = ref<boolean>(true)
+const ongoingGameResp = GetRoomOngoingGame(roomID, fetchingGame)
+// 监听变化，一旦有游戏被创建，进入游戏页面，停止刷新用户列表和停止获取房间游戏
+watch(
+  ongoingGameResp,
+  data => {
+    if (data.getRoomOngoingGame != null) {
+      console.log(data.getRoomOngoingGame)
+      fetchingUsers.value = false
+      fetchingGame.value = false
+    }
+  }
+)
+
+const createGame = () => {
+  CreateGame(roomID).then((data) => {
+    let gameID = data.id
   })
 }
 
@@ -61,6 +85,9 @@ const leaveRoom = () => {
         </div>
       </el-space>
     </el-main>
+    <el-footer>
+      <el-button @click="createGame"> 开始游戏 </el-button>
+    </el-footer>
   </el-container>
 </template>
 
