@@ -13,7 +13,6 @@ const props = defineProps<{
   roomID: string
 }>()
 let roomID: string = props.roomID!
-console.log(roomID)
 let userID = getUserToken()
 if (userID == "") {
   router.push("/")
@@ -54,6 +53,12 @@ watch(
       console.log(data.getRoomOngoingGame)
       fetchingUsers.value = false
       fetchingGame.value = false
+      router.push({
+        path: "/game",
+        query: {
+          gameID: data.getRoomOngoingGame.id
+        }
+      })
     }
   }
 )
@@ -61,6 +66,7 @@ watch(
 const createGame = () => {
   CreateGame(roomID).then((data) => {
     let gameID = data.id
+    console.log('房间已创建，短号为:\n' + gameID)
   })
 }
 
