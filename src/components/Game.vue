@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import router from '../router';
 import { getUserToken } from '../utils/authentication';
+import { GameUser, GetGameUsersByGame } from '../gqls/game';
+import { watch, ref } from 'vue';
 
 
 // 在游戏中维持着 gameID
@@ -13,7 +15,17 @@ if (userID == "") {
   router.push("/")
 }
 // 获取这局游戏的用户，有排序
-const gameUsers = 
+let gameUsers = ref<GameUser[]>()
+const response = GetGameUsersByGame(gameID)
+watch(
+  response,
+  data => {
+    let _data = data.getGameUsersByGame
+    for (let i = 0; i < _data.length; i++) {
+      gameUsers.value?.push(_data[i])
+    }
+  }
+)
 
 </script>
 
