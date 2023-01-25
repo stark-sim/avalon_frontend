@@ -2,32 +2,6 @@ import { useMutation, useQuery, useSubscription } from "@vue/apollo-composable";
 import gql from "graphql-tag";
 import { Ref } from "vue";
 
-const LOGIN = gql`
-  query login($req: loginReq!) {
-    login(req: $req) {
-      id
-      name
-      phone
-      createdAt
-    }
-  }
-`;
-
-const Login = (phone: string) => {
-  const { result, loading, error } = useQuery(
-    LOGIN,
-    {
-      req: {
-        phone: phone,
-      },
-    },
-    {
-      clientId: "default",
-    }
-  );
-  return result;
-};
-
 const GET_JOINED_ROOM = gql`
   query ($req: UserRequest!) {
     getJoinedRoom(req: $req) {
@@ -155,7 +129,7 @@ const GetRoomUsers = (roomID: string, enabled: Ref<boolean>) => {
     }),
     () => ({
       clientId: "avalon",
-      enabled: enabled.value
+      enabled: enabled.value,
     })
   );
   return result;
@@ -193,5 +167,5 @@ const LeaveRoom = async (userID: string, roomID: string) => {
   }
 };
 
-export { Login, JoinRoom, CreateRoom, GetRoomUsers, LeaveRoom, GetJoinedRoom };
+export { JoinRoom, CreateRoom, GetRoomUsers, LeaveRoom, GetJoinedRoom };
 export type { RoomUser, User };

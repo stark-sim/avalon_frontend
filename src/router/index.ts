@@ -23,6 +23,10 @@ const routes = [
       gameID: route.query.gameID,
     }),
   },
+  {
+    path: "/register",
+    component: () => import("../components/Register.vue"),
+  },
 ];
 
 const router = createRouter({
