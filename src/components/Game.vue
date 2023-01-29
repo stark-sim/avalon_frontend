@@ -15,7 +15,7 @@ if (userID == "") {
   router.push("/")
 }
 // 获取这局游戏的用户，有排序
-let gameUsers = ref<GameUser[]>()
+let gameUsers = ref<GameUser[]>([])
 const response = GetGameUsersByGame(gameID)
 watch(
   response,
