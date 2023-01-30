@@ -99,5 +99,42 @@ interface GameUser {
   createdAt: Date;
 }
 
-export { GetRoomOngoingGame, CreateGame, GetGameUsersByGame };
+const GET_MISSIONS_BY_GAME = gql`
+  subscription ($req: GameRequest!) {
+    getMissionsByGame(req: $req) {
+      id
+      sequence
+      status
+      createdAt
+      failed
+      gameID
+      capacity
+      leaderID
+      protected
+    }
+  }
+`;
+
+const GetMissionsByGame = (gameID: string, enabled: Ref<boolean>) => {
+  const { result } = useSubscription(
+    GET_MISSIONS_BY_GAME,
+    () => ({
+      req: {
+        id: gameID,
+      },
+    }),
+    () => ({
+      clientId: "avalon",
+      enabled: enabled.value,
+    })
+  );
+  return result;
+};
+
+export {
+  GetRoomOngoingGame,
+  CreateGame,
+  GetGameUsersByGame,
+  GetMissionsByGame,
+};
 export type { GameUser };
