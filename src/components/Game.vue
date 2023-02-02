@@ -40,20 +40,23 @@ watch(missionsResp, (data) => {
       missions.value[i].status != "closed" &&
       missions.value[i].status != "delayed"
     ) {
-      currentMission.value = missions.value[i];
+      if (currentMission.value == undefined) {
+        currentMission.value = missions.value[i];
+      }
     }
   }
 });
 // 队长选人
-let pickedUserIDs = ref<string[]>([]);
+let pickedUserIDs: string[] = [];
 const pickUserID = (value: string) => {
-  pickedUserIDs.value.push(value);
+  pickedUserIDs.push(value);
+  console.log(pickedUserIDs);
 };
 const unPickUserID = (value: string) => {
-  let i = pickedUserIDs.value.indexOf(value);
-  pickedUserIDs.value = pickedUserIDs.value
+  let i = pickedUserIDs.indexOf(value);
+  pickedUserIDs = pickedUserIDs
     .slice(0, i)
-    .concat(pickedUserIDs.value.slice(i, pickedUserIDs.value.length));
+    .concat(pickedUserIDs.slice(i, pickedUserIDs.length));
 };
 </script>
 
@@ -62,42 +65,29 @@ const unPickUserID = (value: string) => {
     <el-header>
       <div>游戏 ID: {{ gameID }}</div>
       <el-space direction="horizontal" wrap>
-        <div :class="mission" v-for="mission in missions">
+        <div class="missionStyle" v-for="mission in missions" :key="mission.id">
           <el-avatar> {{ mission.sequence }} </el-avatar>
         </div>
       </el-space>
     </el-header>
     <el-main>
-      <el-space direction="vertical" wrap>
-        <div v-for="i in midGameUsersCount">
+      <div class="gameUserRow" v-for="i in midGameUsersCount" :key="i">
+        <div v-for="j in 2" :key="j">
           <el-avatar
             src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"
           />
-          {{ gameUsers[i].user.name }}
+          {{ gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.name }}
           <div
             v-if="
-              currentMission?.leaderID == userID &&
-              pickedUserIDs.length < currentMission.capacity
+              currentMission?.leaderID == userID
             "
           >
-            <el-button :click="pickUserID">选择</el-button>
+            <el-button :click="pickUserID(gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id)"
+              >选择</el-button
+            >
           </div>
         </div>
-        <div v-for="i in midGameUsersCount">
-          <el-avatar
-            src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"
-          />
-          {{ gameUsers[i+midGameUsersCount-1].user.name }}
-          <div
-            v-if="
-              currentMission?.leaderID == userID &&
-              pickedUserIDs.length < currentMission.capacity
-            "
-          >
-            <el-button :click="pickUserID">选择</el-button>
-          </div>
-        </div>
-      </el-space>
+      </div>
     </el-main>
     <el-footer>
       <div v-if="currentMission?.leaderID == userID">
@@ -108,7 +98,13 @@ const unPickUserID = (value: string) => {
 </template>
 
 <style scoped>
-.mission {
+.missionStyle {
   flex-direction: column;
+}
+.gameUserRow {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  /* flex-wrap: wrap; */
 }
 </style>
