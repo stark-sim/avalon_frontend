@@ -47,16 +47,16 @@ watch(missionsResp, (data) => {
   }
 });
 // 队长选人
-let pickedUserIDs: string[] = [];
+let pickedUserIDs = ref<string[]>([]);
 const pickUserID = (value: string) => {
-  pickedUserIDs.push(value);
+  pickedUserIDs.value.push(value);
   console.log(pickedUserIDs);
 };
 const unPickUserID = (value: string) => {
-  let i = pickedUserIDs.indexOf(value);
-  pickedUserIDs = pickedUserIDs
-    .slice(0, i)
-    .concat(pickedUserIDs.slice(i, pickedUserIDs.length));
+  let i = pickedUserIDs.value.indexOf(value);
+  pickedUserIDs.value = pickedUserIDs.value.slice(0, i)
+    .concat(pickedUserIDs.value.slice(i+1, pickedUserIDs.value.length));
+  console.log(pickedUserIDs.value)
 };
 </script>
 
@@ -79,11 +79,28 @@ const unPickUserID = (value: string) => {
           {{ gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.name }}
           <div
             v-if="
-              currentMission?.leaderID == userID
+              currentMission?.leaderID == userID &&
+              pickedUserIDs.length < currentMission.capacity &&
+              !pickedUserIDs.includes(gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id)
             "
           >
-            <el-button :click="pickUserID(gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id)"
+            <el-button
+              @click="
+                pickUserID(
+                  gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
+                )
+              "
               >选择</el-button
+            >
+          </div>
+          <div v-else-if="pickedUserIDs.includes(gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id)">
+            <el-button
+              @click="
+                unPickUserID(
+                  gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
+                )
+              "
+              >取消</el-button
             >
           </div>
         </div>
