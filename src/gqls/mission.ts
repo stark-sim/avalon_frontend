@@ -1,4 +1,4 @@
-import { useMutation, useSubscription } from "@vue/apollo-composable";
+import { useMutation, useQuery, useSubscription } from "@vue/apollo-composable";
 import gql from "graphql-tag";
 import { Ref } from "vue";
 
@@ -67,7 +67,7 @@ const PickSquads = async (pickedUserIDs: Ref<string[]>, missionID: string) => {
       missionID: missionID,
     });
   }
-  console.log(req)
+  console.log(req);
   const { mutate: pickSquads } = useMutation(PICK_SQUADS, () => ({
     variables: {
       req: req,
@@ -85,5 +85,44 @@ const PickSquads = async (pickedUserIDs: Ref<string[]>, missionID: string) => {
   }
 };
 
-export { GetMissionsByGame, PickSquads };
-export type { Mission };
+const GET_VOTE_IN_MISSION = gql`
+  query GetVoteInMission($req: VoteWhereInput!) {
+    getVoteInMission(req: $req) {
+      id
+      userID
+      createdAt
+      missionID
+      voted
+      pass
+    }
+  }
+`;
+
+const GetVoteInMission = (userID: string, missionID: string) => {
+  console.log("vot req")
+  const { result } = useQuery(
+    GET_VOTE_IN_MISSION,
+    {
+      req: {
+        userID: userID,
+        missionID: missionID,
+      },
+    },
+    {
+      clientId: "default",
+    }
+  );
+  return result;
+};
+
+interface Vote {
+  id: string;
+  missionID: string;
+  userID: string;
+  createdAt: Date;
+  voted: boolean;
+  pass: boolean;
+}
+
+export { GetMissionsByGame, PickSquads, GetVoteInMission };
+export type { Mission, Vote };

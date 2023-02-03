@@ -2,8 +2,12 @@
 import router from "../router";
 import { getUserToken } from "../utils/authentication";
 import { GameUser, GetGameUsersByGame } from "../gqls/game";
-import { GetMissionsByGame, PickSquads } from "../gqls/mission";
-import { Mission } from "../gqls/mission";
+import {
+  GetMissionsByGame,
+  PickSquads,
+  GetVoteInMission,
+} from "../gqls/mission";
+import { Mission, Vote } from "../gqls/mission";
 import { watch, ref } from "vue";
 import { ElMessage } from "element-plus";
 
@@ -31,6 +35,7 @@ watch(response, (data) => {
 let missions = ref<Mission[]>([]);
 let missionsResp = GetMissionsByGame(gameID, ref<boolean>(true));
 let currentMission = ref<Mission>();
+let shouldFetchVote = ref<boolean>(false);
 watch(missionsResp, (data) => {
   missions.value = [];
   let tempMissions = data.getMissionsByGame;
@@ -43,6 +48,10 @@ watch(missionsResp, (data) => {
     ) {
       if (currentMission.value == undefined) {
         currentMission.value = missions.value[i];
+        if (currentMission.value.status == "voting") {
+          console.log(shouldFetchVote.value);
+          shouldFetchVote.value = true;
+        }
       }
     }
   }
@@ -53,11 +62,9 @@ const pickUserID = (value: string) => {
   pickedUserIDs.value.push(value);
   console.log(pickedUserIDs);
 };
-const unPickUserID = (value: string) => {
+const unpickUserID = (value: string) => {
   let i = pickedUserIDs.value.indexOf(value);
-  pickedUserIDs.value = pickedUserIDs.value
-    .slice(0, i)
-    .concat(pickedUserIDs.value.slice(i + 1, pickedUserIDs.value.length));
+  pickedUserIDs.value = pickedUserIDs.value.splice(i, 1);
   console.log(pickedUserIDs.value);
 };
 // 确认选队
@@ -74,10 +81,23 @@ const confirmSquads = () => {
   } else {
     ElMessage({
       type: "warning",
-      message: `请选择${currentMission.value?.capacity}位玩家`,
+      message: `请选择${currentMission.value!.capacity}位玩家`,
     });
   }
 };
+// 用户的投票
+let myVote = ref<Vote>();
+// 当目前任务的状态时 voting，才可以看要不要投票
+let voteResp = GetVoteInMission(userID, "1618249455882280960");
+watch(shouldFetchVote, () => {
+  console.log(11)
+  
+})
+watch(voteResp, (data) => {
+  console.log("voteResp")
+  myVote = data.getVoteInMission;
+  console.log(myVote);
+});
 </script>
 
 <template>
@@ -92,7 +112,7 @@ const confirmSquads = () => {
     </el-header>
     <el-main>
       <div class="gameUserRow" v-for="i in midGameUsersCount" :key="i">
-        <div v-for="j in 2" :key="j">
+        <div v-for="(j, idx) in 2" :key="j">
           <el-avatar
             src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"
           />
@@ -101,7 +121,7 @@ const confirmSquads = () => {
             v-if="
               currentMission?.leaderID == userID &&
               currentMission.status == `picking` &&
-              pickedUserIDs.length < currentMission.capacity &&
+              pickedUserIDs.length < currentMission?.capacity &&
               !pickedUserIDs.includes(
                 gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
               )
@@ -125,12 +145,15 @@ const confirmSquads = () => {
           >
             <el-button
               @click="
-                unPickUserID(
+                unpickUserID(
                   gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
                 )
               "
               >取消</el-button
             >
+          </div>
+          <div v-else-if="currentMission?.status == `voting`">
+            {{ myVote }}
           </div>
         </div>
       </div>
