@@ -2,9 +2,10 @@
 import router from "../router";
 import { getUserToken } from "../utils/authentication";
 import { GameUser, GetGameUsersByGame } from "../gqls/game";
-import { GetMissionsByGame } from "../gqls/mission";
+import { GetMissionsByGame, PickSquads } from "../gqls/mission";
 import { Mission } from "../gqls/mission";
 import { watch, ref } from "vue";
+import { ElMessage } from "element-plus";
 
 // 在游戏中维持着 gameID
 const props = defineProps<{
@@ -54,9 +55,28 @@ const pickUserID = (value: string) => {
 };
 const unPickUserID = (value: string) => {
   let i = pickedUserIDs.value.indexOf(value);
-  pickedUserIDs.value = pickedUserIDs.value.slice(0, i)
-    .concat(pickedUserIDs.value.slice(i+1, pickedUserIDs.value.length));
-  console.log(pickedUserIDs.value)
+  pickedUserIDs.value = pickedUserIDs.value
+    .slice(0, i)
+    .concat(pickedUserIDs.value.slice(i + 1, pickedUserIDs.value.length));
+  console.log(pickedUserIDs.value);
+};
+// 确认选队
+const confirmSquads = () => {
+  // 检查是否选好所需人数
+  if (currentMission.value?.capacity == pickedUserIDs.value.length) {
+    PickSquads(pickedUserIDs, currentMission.value!.id)
+      .then((data) => {
+        console.log(data);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  } else {
+    ElMessage({
+      type: "warning",
+      message: `请选择${currentMission.value?.capacity}位玩家`,
+    });
+  }
 };
 </script>
 
@@ -80,8 +100,11 @@ const unPickUserID = (value: string) => {
           <div
             v-if="
               currentMission?.leaderID == userID &&
+              currentMission.status == `picking` &&
               pickedUserIDs.length < currentMission.capacity &&
-              !pickedUserIDs.includes(gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id)
+              !pickedUserIDs.includes(
+                gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
+              )
             "
           >
             <el-button
@@ -93,7 +116,13 @@ const unPickUserID = (value: string) => {
               >选择</el-button
             >
           </div>
-          <div v-else-if="pickedUserIDs.includes(gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id)">
+          <div
+            v-else-if="
+              pickedUserIDs.includes(
+                gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
+              )
+            "
+          >
             <el-button
               @click="
                 unPickUserID(
@@ -107,8 +136,13 @@ const unPickUserID = (value: string) => {
       </div>
     </el-main>
     <el-footer>
-      <div v-if="currentMission?.leaderID == userID">
-        <el-button type="primary">确认选队</el-button>
+      <div
+        v-if="
+          currentMission?.leaderID == userID &&
+          currentMission.status == `picking`
+        "
+      >
+        <el-button type="primary" @click="confirmSquads">确认选队</el-button>
       </div>
     </el-footer>
   </el-container>

@@ -1,4 +1,4 @@
-import { useSubscription } from "@vue/apollo-composable";
+import { useMutation, useSubscription } from "@vue/apollo-composable";
 import gql from "graphql-tag";
 import { Ref } from "vue";
 
@@ -46,5 +46,44 @@ interface Mission {
   createdAt: Date;
 }
 
-export { GetMissionsByGame };
-export type {Mission};
+const PICK_SQUADS = gql`
+  mutation PickSquads($req: [CreateSquadInput!]!) {
+    pickSquads(req: $req) {
+      id
+      userID
+      missionID
+      createdAt
+      rat
+      acted
+    }
+  }
+`;
+
+const PickSquads = async (pickedUserIDs: Ref<string[]>, missionID: string) => {
+  let req: { userID: string; missionID: string }[] = [];
+  for (let i = 0; i < pickedUserIDs.value.length; i++) {
+    req.push({
+      userID: pickedUserIDs.value[i],
+      missionID: missionID,
+    });
+  }
+  console.log(req)
+  const { mutate: pickSquads } = useMutation(PICK_SQUADS, () => ({
+    variables: {
+      req: req,
+    },
+    clientId: "default",
+  }));
+  try {
+    // 同步操作
+    const response = await pickSquads();
+    const data = response?.data;
+    return data.pickSquads;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+};
+
+export { GetMissionsByGame, PickSquads };
+export type { Mission };
