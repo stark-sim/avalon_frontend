@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useSubscription } from "@vue/apollo-composable";
+import { mutable } from "element-plus/es/utils";
 import gql from "graphql-tag";
 import { Ref } from "vue";
 
@@ -99,7 +100,6 @@ const GET_VOTE_IN_MISSION = gql`
 `;
 
 const GetVoteInMission = (userID: string, missionID: string) => {
-  console.log("vot req")
   const { result } = useQuery(
     GET_VOTE_IN_MISSION,
     {
@@ -124,5 +124,109 @@ interface Vote {
   pass: boolean;
 }
 
-export { GetMissionsByGame, PickSquads, GetVoteInMission };
-export type { Mission, Vote };
+const VOTE = gql`
+  mutation Vote($req: VoteRequest!) {
+    vote(req: $req) {
+      id
+      userID
+      missionID
+      pass
+      voted
+      createdAt
+    }
+  }
+`;
+
+const VoteIt = async (pass: boolean, voteID: string) => {
+  const { mutate: vote } = useMutation(VOTE, () => ({
+    variables: {
+      req: {
+        pass: pass,
+        voteID: voteID,
+      },
+    },
+    clientId: "default",
+  }));
+  try {
+    const response = await vote();
+    const data = response?.data;
+    return data.vote;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+};
+
+interface Squad {
+  id: string;
+  createdAt: Date;
+  missionID: string;
+  userID: string;
+  rat: boolean;
+  acted: boolean;
+}
+
+const GET_SQUAD_IN_MISSION = gql`
+  query GetSquadInMission($req: SquadWhereInput!) {
+    getSquadInMission(req: $req) {
+      id
+      createdAt
+      missionID
+      userID
+      rat
+      acted
+    }
+  }
+`;
+
+const GetSquadInMission = (userID: string, missionID: string) => {
+  const { result } = useQuery(
+    GET_SQUAD_IN_MISSION,
+    {
+      req: {
+        userID: userID,
+        missionID: missionID,
+      },
+    },
+    {
+      clientId: "default",
+    }
+  );
+  return result;
+};
+
+const ACT = gql`
+  mutation Act($req: ActRequest!) {
+    act(req: $req) {
+      id
+      createdAt
+      missionID
+      userID
+      rat
+      acted
+    }
+  }
+`;
+
+const ActIt = async (rat: boolean, squadID: string) => {
+  const { mutate: act } = useMutation(ACT, () => ({
+    variables: {
+      req: {
+        rat: rat,
+        squadID: squadID,
+      },
+    },
+    clientId: "default",
+  }));
+  try {
+    const response = await act();
+    const data = response?.data;
+    return data.act;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+};
+
+export { GetMissionsByGame, PickSquads, GetVoteInMission, VoteIt, GetSquadInMission, ActIt };
+export type { Mission, Vote, Squad };

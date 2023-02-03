@@ -6,9 +6,12 @@ import {
   GetMissionsByGame,
   PickSquads,
   GetVoteInMission,
+  VoteIt,
+  GetSquadInMission,
+  ActIt,
 } from "../gqls/mission";
-import { Mission, Vote } from "../gqls/mission";
-import { watch, ref } from "vue";
+import { Mission, Vote, Squad } from "../gqls/mission";
+import { watch, ref, Ref } from "vue";
 import { ElMessage } from "element-plus";
 
 // 在游戏中维持着 gameID
@@ -35,10 +38,48 @@ watch(response, (data) => {
 let missions = ref<Mission[]>([]);
 let missionsResp = GetMissionsByGame(gameID, ref<boolean>(true));
 let currentMission = ref<Mission>();
+let currentMissionUpdated = false;
 let shouldFetchVote = ref<boolean>(false);
+let shouldFetchSquad = ref<boolean>(false);
+let currentMissionStatus = ref<string>("picking");
+const shouldUpdateCurrenMission = (
+  currentMission: Ref<Mission | undefined>,
+  tempMission: any
+): boolean => {
+  if (currentMission.value!.status == "picking") {
+    if (
+      tempMission.value.status == "voting" &&
+      currentMission.value!.sequence == tempMission.value.sequence
+    ) {
+      return true;
+    } else {
+      return false;
+    }
+  } else if (currentMission.value!.status == "voting") {
+    if (
+      tempMission.value.status == "acting" &&
+      currentMission.value!.sequence == tempMission.value.sequence
+    ) {
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    // currentMission 只会是 picking || voting || acting
+    if (
+      tempMission.value.status == "picking" &&
+      currentMission.value!.sequence + 1 == tempMission.value.sequence
+    ) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+};
 watch(missionsResp, (data) => {
   missions.value = [];
   let tempMissions = data.getMissionsByGame;
+
   for (let i = 0; i < tempMissions.length; i++) {
     missions.value.push(tempMissions[i]);
     // 当前进行中的任务
@@ -46,12 +87,19 @@ watch(missionsResp, (data) => {
       missions.value[i].status != "closed" &&
       missions.value[i].status != "delayed"
     ) {
-      if (currentMission.value == undefined) {
+      if (
+        !currentMissionUpdated &&
+        (currentMission.value == undefined ||
+          shouldUpdateCurrenMission(currentMission, missions.value[i]))
+      ) {
         currentMission.value = missions.value[i];
+        currentMissionUpdated = true;
         if (currentMission.value.status == "voting") {
-          console.log(shouldFetchVote.value);
           shouldFetchVote.value = true;
+        } else if (currentMission.value.status == "acting") {
+          shouldFetchSquad.value = true;
         }
+        currentMissionStatus.value = missions.value[i].status;
       }
     }
   }
@@ -88,16 +136,53 @@ const confirmSquads = () => {
 // 用户的投票
 let myVote = ref<Vote>();
 // 当目前任务的状态时 voting，才可以看要不要投票
-let voteResp = GetVoteInMission(userID, "1618249455882280960");
+let voteResp = ref<any>();
+let isVoted = ref<boolean>(false);
+let isPassed = ref<boolean>(false);
 watch(shouldFetchVote, () => {
-  console.log(11)
-  
-})
-watch(voteResp, (data) => {
-  console.log("voteResp")
-  myVote = data.getVoteInMission;
-  console.log(myVote);
+  voteResp = GetVoteInMission(userID, currentMission.value!.id);
+  watch(voteResp, (data) => {
+    myVote = data.getVoteInMission;
+    isVoted.value = data.getVoteInMission.voted;
+    isPassed.value = data.getVoteInMission.pass;
+  });
 });
+// 投票
+const vote = (pass: boolean, myVoteID: string) => {
+  VoteIt(pass, myVoteID).then((data) => {
+    myVote = data;
+    isVoted.value = data.voted
+    isPassed.value = data.pass
+  });
+};
+// 用户的行动
+let mySquad = ref<Squad>();
+// 当目前任务的状态时 acting，才可以看要不要行动
+let SquadResp = ref<any>();
+let isActed = ref<boolean>(false);
+let isRat = ref<boolean>(false);
+let shouldAct = ref<boolean>(false);
+watch(shouldFetchSquad, () => {
+  SquadResp = GetSquadInMission(userID, currentMission.value!.id);
+  watch(SquadResp, (data) => {
+    mySquad = data.getSquadInMission;
+    if (data.getSquadInMission != null) {
+      isActed.value = data.getSquadInMission.acted;
+      isRat.value = data.getSquadInMission.rat;
+      shouldAct.value = true;
+    }
+    console.log(mySquad);
+  });
+});
+// 行动
+let act = (rat: boolean, mySquadID: string) => {
+  ActIt(rat, mySquadID).then((data) => {
+    mySquad = data;
+    console.log(mySquad);
+    isActed.value = data.acted
+    isRat.value = data.rat
+  });
+};
 </script>
 
 <template>
@@ -120,7 +205,7 @@ watch(voteResp, (data) => {
           <div
             v-if="
               currentMission?.leaderID == userID &&
-              currentMission.status == `picking` &&
+              currentMissionStatus == `picking` &&
               pickedUserIDs.length < currentMission?.capacity &&
               !pickedUserIDs.includes(
                 gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
@@ -152,21 +237,40 @@ watch(voteResp, (data) => {
               >取消</el-button
             >
           </div>
-          <div v-else-if="currentMission?.status == `voting`">
-            {{ myVote }}
-          </div>
         </div>
       </div>
     </el-main>
     <el-footer>
-      <div
-        v-if="
-          currentMission?.leaderID == userID &&
-          currentMission.status == `picking`
-        "
-      >
-        <el-button type="primary" @click="confirmSquads">确认选队</el-button>
+      <div v-if="currentMission?.status == `picking`">
+        <div v-if="currentMission?.leaderID == userID">
+          <el-button type="primary" @click="confirmSquads">确认选队</el-button>
+        </div>
+        <div v-else>请等待队长选择任务小队</div>
       </div>
+      <div v-else-if="currentMissionStatus == `voting`">
+        <div v-if="isVoted">
+          <div v-if="isPassed">已表示通过</div>
+          <div v-else>已表示拒绝</div>
+        </div>
+        <div v-else>
+          <el-button @click="vote(true, myVote!.id)">同意</el-button>
+          <el-button @click="vote(false, myVote!.id)">否决</el-button>
+        </div>
+      </div>
+      <div v-else-if="currentMissionStatus == `acting`">
+        <div v-if="shouldAct">
+          <div v-if="isActed">
+            <div v-if="isRat">已破坏任务</div>
+            <div v-else>已完成任务</div>
+          </div>
+          <div v-else>
+            <el-button @click="act(true, mySquad!.id)">破坏</el-button>
+            <el-button @click="act(false, mySquad!.id)">通过</el-button>
+          </div>
+        </div>
+        <div v-else>请等待任务小队行动</div>
+      </div>
+      <div v-else>任务状态{{ currentMissionStatus }}</div>
     </el-footer>
   </el-container>
 </template>
