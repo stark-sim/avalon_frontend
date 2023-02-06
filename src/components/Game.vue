@@ -13,6 +13,7 @@ import {
 import { Mission, Vote, Squad } from "../gqls/mission";
 import { watch, ref, Ref } from "vue";
 import { ElMessage } from "element-plus";
+import { shouldUpdateCurrenMission } from "../logic/mission";
 
 // 在游戏中维持着 gameID
 const props = defineProps<{
@@ -26,8 +27,8 @@ if (userID == "") {
 // 获取这局游戏的用户，有排序
 let gameUsers = ref<GameUser[]>([]);
 let midGameUsersCount = ref<number>(0);
-const response = GetGameUsersByGame(gameID);
-watch(response, (data) => {
+const gameUsersResp = GetGameUsersByGame(gameID);
+watch(gameUsersResp, (data) => {
   let _data = data.getGameUsersByGame;
   for (let i = 0; i < _data.length; i++) {
     gameUsers.value?.push(_data[i]);
@@ -41,63 +42,22 @@ let currentMission = ref<Mission>();
 let shouldFetchVote = ref<boolean>(false);
 let shouldFetchSquad = ref<boolean>(false);
 let currentMissionStatus = ref<string>("picking");
-const shouldUpdateCurrenMission = (
-  currentMission: Ref<Mission | undefined>,
-  tempMission: any
-): boolean => {
-  if (currentMission.value!.status == "picking") {
-    if (
-      tempMission.status == "voting" &&
-      currentMission.value!.sequence == tempMission.sequence
-    ) {
-      return true;
-    } else {
-      return false;
-    }
-  } else if (currentMission.value!.status == "voting") {
-    if (
-      tempMission.status == "acting" &&
-      currentMission.value!.sequence == tempMission.sequence
-    ) {
-      return true;
-    } else {
-      return false;
-    }
-  } else if (currentMission.value!.status == "acting") {
-    console.log(tempMission.status);
-    // currentMission 只会是 picking || voting || acting
-    // 从 acting 切到下一个 picking 需要通过先 变成当前 mission 的 closed 或 delayed，再变成下一个 picking
-    if (
-      (tempMission.status == "closed" || tempMission.status == "delayed") &&
-      currentMission.value!.sequence == tempMission.sequence
-    ) {
-      return true;
-    } else {
-      return false;
-    }
-  } else if (currentMission.value!.status == "closed") {
-    if (currentMission.value!.sequence + 1 == tempMission.sequence) {
-      return true;
-    } else {
-      return false;
-    }
-  } else if (currentMission.value!.status == "delayed") {
-    if (
-      currentMission.value!.sequence == tempMission.sequence &&
-      tempMission.status != "delayed"
-    ) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-  return false;
-};
+let gameStatus = ref<string>("onMission"); // onMission onAssassination onEnd
 watch(missionsResp, (data) => {
   missions.value = [];
   let tempMissions = data.getMissionsByGame;
-
+  // 计算游戏状态
+  let failedCount = 0
+  let closedCount = 0
   for (let i = 0; i < tempMissions.length; i++) {
+    // 统计游戏所有任务的状态已判断是否进入刺杀环节或结算环节
+    if (tempMissions[i].closed) {
+      closedCount++
+    }
+    if (tempMissions[i].failed) {
+      failedCount++
+    }
+    // 更新 ref
     missions.value.push(tempMissions[i]);
     // 当前进行中的任务
     if (
@@ -113,7 +73,21 @@ watch(missionsResp, (data) => {
       currentMissionStatus.value = missions.value[i].status;
     }
   }
+  // 循环结算判断状态
+  if (failedCount == 3) {
+    // 失败了三次
+    gameStatus.value = "onEnd"
+  } else if (closedCount - failedCount == 3) {
+    // 胜利了三次
+    gameStatus.value = "onAssassination"
+  }
 });
+// 弹窗进行刺杀或结算逻辑 始
+watch(gameStatus, (data) => {
+  console.log("游戏状态变==================================================")
+  console.log(gameStatus)
+})
+// 弹窗进行刺杀或结算逻辑 完
 // 队长选人
 let pickedUserIDs = ref<string[]>([]);
 const pickUserID = (value: string) => {
