@@ -38,7 +38,6 @@ watch(response, (data) => {
 let missions = ref<Mission[]>([]);
 let missionsResp = GetMissionsByGame(gameID, ref<boolean>(true));
 let currentMission = ref<Mission>();
-let currentMissionUpdated = false;
 let shouldFetchVote = ref<boolean>(false);
 let shouldFetchSquad = ref<boolean>(false);
 let currentMissionStatus = ref<string>("picking");
@@ -48,8 +47,8 @@ const shouldUpdateCurrenMission = (
 ): boolean => {
   if (currentMission.value!.status == "picking") {
     if (
-      tempMission.value.status == "voting" &&
-      currentMission.value!.sequence == tempMission.value.sequence
+      tempMission.status == "voting" &&
+      currentMission.value!.sequence == tempMission.sequence
     ) {
       return true;
     } else {
@@ -57,24 +56,42 @@ const shouldUpdateCurrenMission = (
     }
   } else if (currentMission.value!.status == "voting") {
     if (
-      tempMission.value.status == "acting" &&
-      currentMission.value!.sequence == tempMission.value.sequence
+      tempMission.status == "acting" &&
+      currentMission.value!.sequence == tempMission.sequence
     ) {
       return true;
     } else {
       return false;
     }
-  } else {
+  } else if (currentMission.value!.status == "acting") {
+    console.log(tempMission.status);
     // currentMission 只会是 picking || voting || acting
+    // 从 acting 切到下一个 picking 需要通过先 变成当前 mission 的 closed 或 delayed，再变成下一个 picking
     if (
-      tempMission.value.status == "picking" &&
-      currentMission.value!.sequence + 1 == tempMission.value.sequence
+      (tempMission.status == "closed" || tempMission.status == "delayed") &&
+      currentMission.value!.sequence == tempMission.sequence
+    ) {
+      return true;
+    } else {
+      return false;
+    }
+  } else if (currentMission.value!.status == "closed") {
+    if (currentMission.value!.sequence + 1 == tempMission.sequence) {
+      return true;
+    } else {
+      return false;
+    }
+  } else if (currentMission.value!.status == "delayed") {
+    if (
+      currentMission.value!.sequence == tempMission.sequence &&
+      tempMission.status != "delayed"
     ) {
       return true;
     } else {
       return false;
     }
   }
+  return false;
 };
 watch(missionsResp, (data) => {
   missions.value = [];
@@ -84,41 +101,40 @@ watch(missionsResp, (data) => {
     missions.value.push(tempMissions[i]);
     // 当前进行中的任务
     if (
-      missions.value[i].status != "closed" &&
-      missions.value[i].status != "delayed"
+      currentMission.value == undefined ||
+      shouldUpdateCurrenMission(currentMission, missions.value[i])
     ) {
-      if (
-        !currentMissionUpdated &&
-        (currentMission.value == undefined ||
-          shouldUpdateCurrenMission(currentMission, missions.value[i]))
-      ) {
-        currentMission.value = missions.value[i];
-        currentMissionUpdated = true;
-        if (currentMission.value.status == "voting") {
-          shouldFetchVote.value = true;
-        } else if (currentMission.value.status == "acting") {
-          shouldFetchSquad.value = true;
-        }
-        currentMissionStatus.value = missions.value[i].status;
+      console.log("before");
+      console.log(currentMission);
+      console.log(missions.value[i]);
+      console.log("after");
+      currentMission.value = missions.value[i];
+      if (currentMission.value.status == "voting") {
+        shouldFetchVote.value = true;
+      } else if (currentMission.value.status == "acting") {
+        shouldFetchSquad.value = true;
       }
+      currentMissionStatus.value = missions.value[i].status;
     }
+    // console.log("current mission is");
+    // console.log(currentMission);
   }
 });
 // 队长选人
 let pickedUserIDs = ref<string[]>([]);
 const pickUserID = (value: string) => {
   pickedUserIDs.value.push(value);
-  console.log(pickedUserIDs);
 };
 const unpickUserID = (value: string) => {
   let i = pickedUserIDs.value.indexOf(value);
   pickedUserIDs.value = pickedUserIDs.value.splice(i, 1);
-  console.log(pickedUserIDs.value);
 };
 // 确认选队
 const confirmSquads = () => {
   // 检查是否选好所需人数
   if (currentMission.value?.capacity == pickedUserIDs.value.length) {
+    console.log(userID);
+    console.log(currentMission.value!.id);
     PickSquads(pickedUserIDs, currentMission.value!.id)
       .then((data) => {
         console.log(data);
@@ -151,8 +167,8 @@ watch(shouldFetchVote, () => {
 const vote = (pass: boolean, myVoteID: string) => {
   VoteIt(pass, myVoteID).then((data) => {
     myVote = data;
-    isVoted.value = data.voted
-    isPassed.value = data.pass
+    isVoted.value = data.voted;
+    isPassed.value = data.pass;
   });
 };
 // 用户的行动
@@ -178,9 +194,8 @@ watch(shouldFetchSquad, () => {
 let act = (rat: boolean, mySquadID: string) => {
   ActIt(rat, mySquadID).then((data) => {
     mySquad = data;
-    console.log(mySquad);
-    isActed.value = data.acted
-    isRat.value = data.rat
+    isActed.value = data.acted;
+    isRat.value = data.rat;
   });
 };
 </script>

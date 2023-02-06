@@ -27,9 +27,7 @@ if (userID == "") {
 // 检查有没有在某个房间，有的话直接去房间页面
 const getJoinedRoom = () => {
   let result = GetJoinedRoom(userID);
-  console.log("this is fine");
   watch(result, (data) => {
-    console.log(data);
     if (data.getJoinedRoom != null) {
       router.push({
         path: "/room",

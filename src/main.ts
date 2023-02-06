@@ -39,17 +39,12 @@ const wsLink = new GraphQLWsLink(
     // lazy: false,
     on: {
       connecting: () => {
-        console.log("connecting");
       },
       opened: () => {
-        console.log("opened");
       },
       ping: (received, payload) => {
-        console.log(received);
-        console.log(payload);
       },
       connected: () => {
-        console.log("connected");
       },
       error: (event) => {
         console.log(event);

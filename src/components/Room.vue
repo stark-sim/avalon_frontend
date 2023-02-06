@@ -50,7 +50,6 @@ watch(
   ongoingGameResp,
   data => {
     if (data.getRoomOngoingGame != null) {
-      console.log(data.getRoomOngoingGame)
       fetchingUsers.value = false
       fetchingGame.value = false
       router.push({
