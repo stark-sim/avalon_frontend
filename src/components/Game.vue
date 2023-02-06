@@ -104,10 +104,6 @@ watch(missionsResp, (data) => {
       currentMission.value == undefined ||
       shouldUpdateCurrenMission(currentMission, missions.value[i])
     ) {
-      console.log("before");
-      console.log(currentMission);
-      console.log(missions.value[i]);
-      console.log("after");
       currentMission.value = missions.value[i];
       if (currentMission.value.status == "voting") {
         shouldFetchVote.value = true;
@@ -116,8 +112,6 @@ watch(missionsResp, (data) => {
       }
       currentMissionStatus.value = missions.value[i].status;
     }
-    // console.log("current mission is");
-    // console.log(currentMission);
   }
 });
 // 队长选人
@@ -127,14 +121,12 @@ const pickUserID = (value: string) => {
 };
 const unpickUserID = (value: string) => {
   let i = pickedUserIDs.value.indexOf(value);
-  pickedUserIDs.value = pickedUserIDs.value.splice(i, 1);
+  pickedUserIDs.value.splice(i, 1);
 };
 // 确认选队
 const confirmSquads = () => {
   // 检查是否选好所需人数
   if (currentMission.value?.capacity == pickedUserIDs.value.length) {
-    console.log(userID);
-    console.log(currentMission.value!.id);
     PickSquads(pickedUserIDs, currentMission.value!.id)
       .then((data) => {
         console.log(data);
