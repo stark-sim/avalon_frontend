@@ -1,5 +1,4 @@
-
-const GetAvatarPathByUserIDAndNumber = (userID: string, number: number): string => {
+const getAvatarPathByUserIDAndNumber = (userID: string, number: number): string => {
     // 同一天同一人在同一个号码上头像一样
     const now = new Date()
     const day = now.getDay()
@@ -25,4 +24,8 @@ const GetAvatarPathByUserIDAndNumber = (userID: string, number: number): string 
     return avatarPathList[res]
 }
 
-export {GetAvatarPathByUserIDAndNumber}
+const getAvatarPathByCardName = (cardName: string): string => {
+    return "src/assets/cards/" + cardName + ".svg"
+}
+
+export {getAvatarPathByUserIDAndNumber, getAvatarPathByCardName}

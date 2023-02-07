@@ -51,4 +51,8 @@ const shouldUpdateCurrenMission = (
   return false;
 };
 
-export {shouldUpdateCurrenMission}
+const getMissionAvatarPath = (sequence: number): string => {
+    return "src/assets/missions/_" + sequence + ".svg"
+}
+
+export {shouldUpdateCurrenMission, getMissionAvatarPath}

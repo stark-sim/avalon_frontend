@@ -55,7 +55,8 @@ watch(
       router.push({
         path: "/game",
         query: {
-          gameID: data.getRoomOngoingGame.id
+          gameID: data.getRoomOngoingGame.id,
+          assassinChance: data.getRoomOngoingGame.assassinChance
         }
       })
     }

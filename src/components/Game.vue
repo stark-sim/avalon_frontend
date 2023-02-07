@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import router from "../router";
 import { getUserToken } from "../utils/authentication";
-import { GameUser, GetGameUsersByGame } from "../gqls/game";
+import {
+  GameUser,
+  GetGameUsersByGame,
+  GetGameUsersWithCardByGame,
+  GetVagueGameUsers,
+} from "../gqls/game";
 import {
   GetMissionsByGame,
   PickSquads,
@@ -13,14 +18,25 @@ import {
 import { Mission, Vote, Squad } from "../gqls/mission";
 import { watch, ref, Ref } from "vue";
 import { ElMessage } from "element-plus";
-import { shouldUpdateCurrenMission } from "../logic/mission";
-import { GetAvatarPathByUserIDAndNumber } from "../logic/game";
+import {
+  shouldUpdateCurrenMission,
+  getMissionAvatarPath,
+} from "../logic/mission";
+import {
+  getAvatarPathByCardName,
+  getAvatarPathByUserIDAndNumber,
+} from "../logic/game";
 
 // 在游戏中维持着 gameID
 const props = defineProps<{
   gameID: string;
+  assassinChance: number;
 }>();
 const gameID: string = props.gameID;
+// 刺杀环节所需数据
+const assassinChance: number = props.assassinChance;
+let tempAssassinatedIDs = ref<string[]>([]);
+// 登录状态检查
 let userID = getUserToken();
 if (userID == "") {
   router.push("/");
@@ -38,7 +54,7 @@ watch(gameUsersResp, (data) => {
 });
 // 获取这局游戏的任务状态
 let missions = ref<Mission[]>([]);
-let missionsFetchEnable = ref<boolean>(true)
+let missionsFetchEnable = ref<boolean>(true);
 let missionsResp = GetMissionsByGame(gameID, missionsFetchEnable);
 let currentMission = ref<Mission>();
 let shouldFetchVote = ref<boolean>(false);
@@ -88,12 +104,37 @@ watch(missionsResp, (data) => {
     missionsFetchEnable.value = false;
   }
 });
-// 弹窗进行刺杀或结算逻辑 始
+// 刺杀或结算逻辑
+let assassinatorID = ref<string>();
 watch(gameStatus, (data) => {
   console.log("游戏状态变==================================================");
   console.log(gameStatus);
+  // 刺杀环境，全局揭示红方身份
+  if (gameStatus.value == "onAssassination") {
+    const vagueGameUserResp = GetVagueGameUsers(gameID);
+    watch(vagueGameUserResp, (data) => {
+      gameUsers.value = [];
+      let _data = data.getVagueGameUsers;
+      for (let i = 0; i < _data.length; i++) {
+        gameUsers.value.push(_data[i]);
+        if (gameUsers.value[i].card.name == "Agravain") {
+          assassinatorID.value = gameUsers.value[i].user.id;
+        }
+      }
+    });
+  } else if (gameStatus.value == "onEnd") {
+    {
+      const clearGameUsersResp = GetGameUsersWithCardByGame(gameID);
+      watch(clearGameUsersResp, (data) => {
+        gameUsers.value = [];
+        let _data = data.getGameUsersByGame;
+        for (let i = 0; i < _data.length; i++) {
+          gameUsers.value.push(_data[i]);
+        }
+      });
+    }
+  }
 });
-// 弹窗进行刺杀或结算逻辑 完
 // 队长选人
 let pickedUserIDs = ref<string[]>([]);
 const pickUserID = (value: string) => {
@@ -178,57 +219,19 @@ let act = (rat: boolean, mySquadID: string) => {
       <div>游戏 ID: {{ gameID }}</div>
       <el-space direction="horizontal" wrap>
         <div class="missionStyle" v-for="mission in missions" :key="mission.id">
-          <div v-if="mission.sequence == currentMission?.sequence">
-            <!-- <el-avatar src="http://159.75.243.79:9000/pictures/_1.png" /> -->
-            <!-- <el-avatar src="../../assets/_1.png" /> -->
-            <!-- <el-avatar :src="image" /> -->
+          <div
+            v-if="
+              mission.sequence == currentMission?.sequence &&
+              mission.status != `closed`
+            "
+          >
             <el-avatar
               size="large"
-              v-if="mission.sequence == 1"
-              src="src/assets/missions/_1.svg"
-            />
-            <el-avatar
-              size="large"
-              v-else-if="mission.sequence == 2"
-              src="src/assets/missions/_2.svg"
-            />
-            <el-avatar
-              size="large"
-              v-else-if="mission.sequence == 3"
-              src="src/assets/missions/_3.svg"
-            />
-            <el-avatar
-              size="large"
-              v-else-if="mission.sequence == 4"
-              src="src/assets/missions/_4.svg"
-            />
-            <el-avatar
-              size="large"
-              v-else-if="mission.sequence == 5"
-              src="src/assets/missions/_5.svg"
+              :src="getMissionAvatarPath(mission.sequence)"
             />
           </div>
           <div v-else>
-            <el-avatar
-              v-if="mission.sequence == 1"
-              src="src/assets/missions/_1.svg"
-            />
-            <el-avatar
-              v-else-if="mission.sequence == 2"
-              src="src/assets/missions/_2.svg"
-            />
-            <el-avatar
-              v-else-if="mission.sequence == 3"
-              src="src/assets/missions/_3.svg"
-            />
-            <el-avatar
-              v-else-if="mission.sequence == 4"
-              src="src/assets/missions/_4.svg"
-            />
-            <el-avatar
-              v-else-if="mission.sequence == 5"
-              src="src/assets/missions/_5.svg"
-            />
+            <el-avatar :src="getMissionAvatarPath(mission.sequence)" />
           </div>
         </div>
       </el-space>
@@ -236,23 +239,46 @@ let act = (rat: boolean, mySquadID: string) => {
     <el-main>
       <div class="gameUserRow" v-for="i in midGameUsersCount" :key="i">
         <div v-for="(j, idx) in 2" :key="j">
-          <el-avatar
-            v-if="
-              currentMission?.leaderID ==
-              gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
+          <div v-if="gameStatus == `onMission`">
+            <!-- 队长固定头像 -->
+            <el-avatar
+              v-if="
+                currentMission?.leaderID ==
+                gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
+              "
+              src="src/assets/avatars/sheriff.svg"
+            />
+            <!-- 随机普通头像 -->
+            <el-avatar
+              v-else
+              :src="
+                getAvatarPathByUserIDAndNumber(
+                  gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id,
+                  gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].number
+                )
+              "
+            />
+          </div>
+          <div
+            v-else-if="
+              gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].card !=
+              undefined
             "
-            src="src/assets/avatars/sheriff.svg"
-          />
-          <el-avatar
-            v-else
-            :src="
-              GetAvatarPathByUserIDAndNumber(
-                gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id,
-                gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].number
-              )
-            "
-          />
-          {{ gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.name }}
+          >
+            <!-- 角色对应头像 -->
+            <el-avatar
+              :src="
+                getAvatarPathByCardName(
+                  gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].card.name
+                )
+              "
+            />
+          </div>
+          <!-- 名字 -->
+          <div>
+            {{ gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.name }}
+          </div>
+          <!-- 选人刺杀等动作 -->
           <div
             v-if="
               currentMission?.leaderID == userID &&
@@ -288,6 +314,30 @@ let act = (rat: boolean, mySquadID: string) => {
               >取消</el-button
             >
           </div>
+          <div
+            v-else-if="
+              userID == assassinatorID &&
+              gameStatus == `onAssassination` &&
+              tempAssassinatedIDs.length < assassinChance &&
+              gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].card.name == `Merlin` &&
+              !tempAssassinatedIDs.includes(
+                gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
+              )
+            "
+          >
+            瞄准
+          </div>
+          <div
+            v-else-if="
+              userID == assassinatorID &&
+              gameStatus == `onAssassination` &&
+              tempAssassinatedIDs.includes(
+                gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
+              )
+            "
+          >
+            放过
+          </div>
         </div>
       </div>
     </el-main>
@@ -321,7 +371,8 @@ let act = (rat: boolean, mySquadID: string) => {
         </div>
         <div v-else>请等待任务小队行动</div>
       </div>
-      <div v-else>任务状态{{ currentMissionStatus }}</div>
+      <div v-else-if="gameStatus == `onAssassination`">刺杀环节</div>
+      <div v-else-if="gameStatus == `onEnd`">返回房间</div>
     </el-footer>
   </el-container>
 </template>

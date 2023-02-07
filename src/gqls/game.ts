@@ -9,6 +9,7 @@ const GET_ROOM_ONGOING_GAME = gql`
       id
       endBy
       capacity
+      assassinChance
       createdAt
     }
   }
@@ -91,13 +92,93 @@ const GetGameUsersByGame = (gameID: string) => {
   return result;
 };
 
+interface Card {
+  id: string;
+  role: string;
+  name: string;
+}
+
 interface GameUser {
   id: string;
   gameID: string;
   user: User;
+  card: Card;
   number: number;
   createdAt: Date;
 }
 
-export { GetRoomOngoingGame, CreateGame, GetGameUsersByGame };
+const GET_VAGUE_GAME_USERS = gql`
+  query ($req: GameRequest!) {
+    getVagueGameUsers(req: $req) {
+      id
+      user {
+        id
+        name
+        phone
+      }
+      card {
+        id
+        name
+        role
+      }
+      number
+      createdAt
+      gameID
+    }
+  }
+`;
+
+const GetVagueGameUsers = (gameID: string) => {
+  const { result } = useQuery(
+    GET_VAGUE_GAME_USERS,
+    {
+      req: {
+        id: gameID,
+      },
+    },
+    {
+      clientId: "default",
+    }
+  );
+  return result;
+};
+
+const GET_GAME_USERS_WITH_CARD_BY_GAME = gql`
+  query ($req: GameRequest!) {
+    getGameUsersByGame(req: $req) {
+      id
+      user {
+        id
+        name
+        phone
+      }
+      card {
+        id
+        name
+        role
+        tale
+      }
+      number
+      createdAt
+      gameID
+    }
+  }
+`;
+
+const GetGameUsersWithCardByGame = (gameID: string) => {
+  const { result } = useQuery(
+    GET_GAME_USERS_WITH_CARD_BY_GAME,
+    () => ({
+      req: {
+        id: gameID,
+      },
+    }),
+    {
+      clientId: "default",
+    }
+  );
+  return result;
+};
+
+export { GetRoomOngoingGame, CreateGame, GetGameUsersByGame, GetVagueGameUsers, GetGameUsersWithCardByGame };
 export type { GameUser };
