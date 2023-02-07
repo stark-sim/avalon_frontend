@@ -14,6 +14,7 @@ import { Mission, Vote, Squad } from "../gqls/mission";
 import { watch, ref, Ref } from "vue";
 import { ElMessage } from "element-plus";
 import { shouldUpdateCurrenMission } from "../logic/mission";
+import { GetAvatarPathByUserIDAndNumber } from "../logic/game";
 
 // 在游戏中维持着 gameID
 const props = defineProps<{
@@ -37,25 +38,28 @@ watch(gameUsersResp, (data) => {
 });
 // 获取这局游戏的任务状态
 let missions = ref<Mission[]>([]);
-let missionsResp = GetMissionsByGame(gameID, ref<boolean>(true));
+let missionsFetchEnable = ref<boolean>(true)
+let missionsResp = GetMissionsByGame(gameID, missionsFetchEnable);
 let currentMission = ref<Mission>();
 let shouldFetchVote = ref<boolean>(false);
 let shouldFetchSquad = ref<boolean>(false);
 let currentMissionStatus = ref<string>("picking");
 let gameStatus = ref<string>("onMission"); // onMission onAssassination onEnd
+let failedCount = 0;
+let closedCount = 0;
 watch(missionsResp, (data) => {
   missions.value = [];
   let tempMissions = data.getMissionsByGame;
   // 计算游戏状态
-  let failedCount = 0
-  let closedCount = 0
+  failedCount = 0;
+  closedCount = 0;
   for (let i = 0; i < tempMissions.length; i++) {
     // 统计游戏所有任务的状态已判断是否进入刺杀环节或结算环节
-    if (tempMissions[i].closed) {
-      closedCount++
+    if (tempMissions[i].status == "closed") {
+      closedCount++;
     }
     if (tempMissions[i].failed) {
-      failedCount++
+      failedCount++;
     }
     // 更新 ref
     missions.value.push(tempMissions[i]);
@@ -65,28 +69,30 @@ watch(missionsResp, (data) => {
       shouldUpdateCurrenMission(currentMission, missions.value[i])
     ) {
       currentMission.value = missions.value[i];
-      if (currentMission.value.status == "voting") {
-        shouldFetchVote.value = true;
-      } else if (currentMission.value.status == "acting") {
-        shouldFetchSquad.value = true;
-      }
       currentMissionStatus.value = missions.value[i].status;
     }
+  }
+  if (currentMission.value?.status == "voting") {
+    shouldFetchVote.value = true;
+  } else if (currentMission.value?.status == "acting") {
+    shouldFetchSquad.value = true;
   }
   // 循环结算判断状态
   if (failedCount == 3) {
     // 失败了三次
-    gameStatus.value = "onEnd"
+    gameStatus.value = "onEnd";
+    missionsFetchEnable.value = false;
   } else if (closedCount - failedCount == 3) {
     // 胜利了三次
-    gameStatus.value = "onAssassination"
+    gameStatus.value = "onAssassination";
+    missionsFetchEnable.value = false;
   }
 });
 // 弹窗进行刺杀或结算逻辑 始
 watch(gameStatus, (data) => {
-  console.log("游戏状态变==================================================")
-  console.log(gameStatus)
-})
+  console.log("游戏状态变==================================================");
+  console.log(gameStatus);
+});
 // 弹窗进行刺杀或结算逻辑 完
 // 队长选人
 let pickedUserIDs = ref<string[]>([]);
@@ -172,7 +178,58 @@ let act = (rat: boolean, mySquadID: string) => {
       <div>游戏 ID: {{ gameID }}</div>
       <el-space direction="horizontal" wrap>
         <div class="missionStyle" v-for="mission in missions" :key="mission.id">
-          <el-avatar> {{ mission.sequence }} </el-avatar>
+          <div v-if="mission.sequence == currentMission?.sequence">
+            <!-- <el-avatar src="http://159.75.243.79:9000/pictures/_1.png" /> -->
+            <!-- <el-avatar src="../../assets/_1.png" /> -->
+            <!-- <el-avatar :src="image" /> -->
+            <el-avatar
+              size="large"
+              v-if="mission.sequence == 1"
+              src="src/assets/missions/_1.svg"
+            />
+            <el-avatar
+              size="large"
+              v-else-if="mission.sequence == 2"
+              src="src/assets/missions/_2.svg"
+            />
+            <el-avatar
+              size="large"
+              v-else-if="mission.sequence == 3"
+              src="src/assets/missions/_3.svg"
+            />
+            <el-avatar
+              size="large"
+              v-else-if="mission.sequence == 4"
+              src="src/assets/missions/_4.svg"
+            />
+            <el-avatar
+              size="large"
+              v-else-if="mission.sequence == 5"
+              src="src/assets/missions/_5.svg"
+            />
+          </div>
+          <div v-else>
+            <el-avatar
+              v-if="mission.sequence == 1"
+              src="src/assets/missions/_1.svg"
+            />
+            <el-avatar
+              v-else-if="mission.sequence == 2"
+              src="src/assets/missions/_2.svg"
+            />
+            <el-avatar
+              v-else-if="mission.sequence == 3"
+              src="src/assets/missions/_3.svg"
+            />
+            <el-avatar
+              v-else-if="mission.sequence == 4"
+              src="src/assets/missions/_4.svg"
+            />
+            <el-avatar
+              v-else-if="mission.sequence == 5"
+              src="src/assets/missions/_5.svg"
+            />
+          </div>
         </div>
       </el-space>
     </el-header>
@@ -180,7 +237,20 @@ let act = (rat: boolean, mySquadID: string) => {
       <div class="gameUserRow" v-for="i in midGameUsersCount" :key="i">
         <div v-for="(j, idx) in 2" :key="j">
           <el-avatar
-            src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"
+            v-if="
+              currentMission?.leaderID ==
+              gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
+            "
+            src="src/assets/avatars/sheriff.svg"
+          />
+          <el-avatar
+            v-else
+            :src="
+              GetAvatarPathByUserIDAndNumber(
+                gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id,
+                gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].number
+              )
+            "
           />
           {{ gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.name }}
           <div
@@ -260,6 +330,10 @@ let act = (rat: boolean, mySquadID: string) => {
 .missionStyle {
   flex-direction: column;
 }
+.missionStyle:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+
 .gameUserRow {
   display: flex;
   justify-content: space-between;
