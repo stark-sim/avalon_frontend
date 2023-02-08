@@ -239,6 +239,33 @@ const GetAssassinationByGame = (gameID: string, enabled: Ref<boolean>) => {
   return result;
 };
 
+const GET_ONES_CARD_IN_GAME = gql`
+  query ($req: GameUserRequest!) {
+    getOnesCardInGame(req: $req) {
+      id
+      name
+      role
+      tale
+    }
+  }
+`;
+
+const GetOnesCardInGame = (userID: string, gameID: string) => {
+  const { result } = useQuery(
+    GET_ONES_CARD_IN_GAME,
+    {
+      req: {
+        userID: userID,
+        gameID: gameID,
+      },
+    },
+    {
+      clientId: "default",
+    }
+  );
+  return result;
+};
+
 export {
   GetRoomOngoingGame,
   CreateGame,
@@ -247,5 +274,6 @@ export {
   GetGameUsersWithCardByGame,
   Assassinate,
   GetAssassinationByGame,
+  GetOnesCardInGame,
 };
-export type { GameUser };
+export type { GameUser, Card };

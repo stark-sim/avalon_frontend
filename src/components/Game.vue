@@ -3,11 +3,13 @@ import router from "../router";
 import { getUserToken } from "../utils/authentication";
 import {
   GameUser,
+  Card,
   GetGameUsersByGame,
   GetGameUsersWithCardByGame,
   GetVagueGameUsers,
   Assassinate,
   GetAssassinationByGame,
+  GetOnesCardInGame,
 } from "../gqls/game";
 import {
   GetMissionsByGame,
@@ -55,6 +57,13 @@ watch(gameUsersResp, (data) => {
   }
   midGameUsersCount.value = gameUsers.value.length / 2;
 });
+// 获取用户的卡牌
+let myCard = ref<Card>()
+const cardResp = GetOnesCardInGame(userID, gameID)
+watch(cardResp, (data) => {
+  let _data = data.getOnesCardInGame;
+  myCard.value = _data
+})
 // 获取这局游戏的任务状态
 let missions = ref<Mission[]>([]);
 let missionsFetchEnable = ref<boolean>(true);
