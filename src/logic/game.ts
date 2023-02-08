@@ -1,6 +1,18 @@
 import Merlin from "../assets/cards/Merlin.svg";
 import Morgana from "../assets/cards/Morgana.svg";
 import Agravain from "../assets/cards/Agravain.svg";
+import Percival from "../assets/cards/Percival.svg";
+import Mordred from "../assets/cards/Mordred.svg";
+import Galahad from "../assets/cards/Galahad.svg";
+import Bedivere from "../assets/cards/Bedivere.svg";
+import Bors from "../assets/cards/Bors.svg";
+import Ector from "../assets/cards/Ector.svg";
+import Gawain from "../assets/cards/Gawain.svg";
+import Kay from "../assets/cards/Kay.svg";
+import Oberon from "../assets/cards/Oberon.svg";
+import Kevin from "../assets/cards/Kevin.png";
+import Stuart from "../assets/cards/Stuart.png";
+import Bob from "../assets/cards/Bob.png";
 
 import astronaut from "../assets/avatars/astronaut.svg";
 import buddhistMonk from "../assets/avatars/buddhist-monk.svg";
@@ -57,6 +69,30 @@ const getAvatarPathByCardName = (cardName: string): string => {
       return Morgana;
     case "Agravain":
       return Agravain;
+    case "Percival":
+      return Percival;
+    case "Mordred":
+      return Mordred;
+    case "Oberon":
+      return Oberon;
+    case "Galahad":
+      return Galahad;
+    case "Bedivere":
+      return Bedivere;
+    case "Bors":
+      return Bors;
+    case "Ector":
+      return Ector;
+    case "Gawain":
+      return Gawain;
+    case "Kay":
+      return Kay;
+    case "Kevin":
+      return Kevin;
+    case "Stuart":
+      return Stuart;
+    case "Bob":
+      return Bob;
     default:
       return "";
   }

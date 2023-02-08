@@ -19,7 +19,7 @@ const routes = [
   {
     path: "/game",
     component: () => import("../components/Game.vue"),
-    props: (route: { query: { gameID: string, assassinChance: number } }) => ({
+    props: (route: { query: { gameID: string, assassinChance: string } }) => ({
       gameID: route.query.gameID,
       assassinChance: route.query.assassinChance
     }),

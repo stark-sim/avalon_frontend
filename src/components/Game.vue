@@ -33,11 +33,11 @@ import sheriffAvatar from "../assets/avatars/sheriff.svg";
 // 在游戏中维持着 gameID
 const props = defineProps<{
   gameID: string;
-  assassinChance: number;
+  assassinChance: string;
 }>();
 const gameID: string = props.gameID;
 // 刺杀环节所需数据
-const assassinChance: number = props.assassinChance;
+const assassinChance: number = parseInt(props.assassinChance);
 let tempAssassinatedIDs = ref<string[]>([]);
 // 登录状态检查
 let userID = getUserToken();
@@ -450,7 +450,7 @@ const confirmAssassination = () => {
         </div>
         <div v-else>刺杀环节</div>
       </div>
-      <div v-else-if="gameStatus == `onEnd`">返回房间</div>
+      <div v-else-if="gameStatus == `onEnd`"><el-button @click="()=>{router.back()}">返回房间</el-button></div>
     </el-footer>
   </el-container>
 </template>
