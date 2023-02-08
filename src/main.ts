@@ -74,7 +74,6 @@ const avalonClient = new ApolloClient({
 });
 
 provideApolloClients({
-  // useSubscription 改不了 clientID，暂时解决方法
   default: superClient,
   cas: casClient,
   avalon: avalonClient,

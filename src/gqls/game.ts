@@ -180,5 +180,72 @@ const GetGameUsersWithCardByGame = (gameID: string) => {
   return result;
 };
 
-export { GetRoomOngoingGame, CreateGame, GetGameUsersByGame, GetVagueGameUsers, GetGameUsersWithCardByGame };
+const ASSASSINATE = gql`
+  mutation ($req: AssassinateRequest!) {
+    assassinate(req: $req) {
+      id
+      endBy
+      capacity
+      theAssassinatedIds
+      assassinChance
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+const Assassinate = async (gameID: string, targetIDs: string[]) => {
+  const { mutate: assassinate } = useMutation(ASSASSINATE, () => ({
+    variables: {
+      req: {
+        gameID: gameID,
+        theAssassinatedIDs: targetIDs,
+      },
+    },
+    clientId: "default",
+  }));
+  try {
+    const response = await assassinate();
+    const data = response?.data;
+    return data.assassinate;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+};
+
+const GET_ASSASSINATION_BY_GAME = gql`
+  subscription ($req: GameRequest!) {
+    getAssassinationByGame(req: $req) {
+      tempPickedIDs
+      theAssassinatedIDs
+    }
+  }
+`;
+
+const GetAssassinationByGame = (gameID: string, enabled: Ref<boolean>) => {
+  const { result } = useSubscription(
+    GET_ASSASSINATION_BY_GAME,
+    () => ({
+      req: {
+        id: gameID,
+      },
+    }),
+    () => ({
+      clientId: "avalon",
+      enabled: enabled.value,
+    })
+  );
+  return result;
+};
+
+export {
+  GetRoomOngoingGame,
+  CreateGame,
+  GetGameUsersByGame,
+  GetVagueGameUsers,
+  GetGameUsersWithCardByGame,
+  Assassinate,
+  GetAssassinationByGame,
+};
 export type { GameUser };

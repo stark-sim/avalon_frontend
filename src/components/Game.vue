@@ -6,6 +6,8 @@ import {
   GetGameUsersByGame,
   GetGameUsersWithCardByGame,
   GetVagueGameUsers,
+  Assassinate,
+  GetAssassinationByGame,
 } from "../gqls/game";
 import {
   GetMissionsByGame,
@@ -26,7 +28,7 @@ import {
   getAvatarPathByCardName,
   getAvatarPathByUserIDAndNumber,
 } from "../logic/game";
-import sheriffAvatar from "../assets/avatars/sheriff.svg"
+import sheriffAvatar from "../assets/avatars/sheriff.svg";
 
 // 在游戏中维持着 gameID
 const props = defineProps<{
@@ -105,37 +107,7 @@ watch(missionsResp, (data) => {
     missionsFetchEnable.value = false;
   }
 });
-// 刺杀或结算逻辑
-let assassinatorID = ref<string>();
-watch(gameStatus, (data) => {
-  console.log("游戏状态变==================================================");
-  console.log(gameStatus);
-  // 刺杀环境，全局揭示红方身份
-  if (gameStatus.value == "onAssassination") {
-    const vagueGameUserResp = GetVagueGameUsers(gameID);
-    watch(vagueGameUserResp, (data) => {
-      gameUsers.value = [];
-      let _data = data.getVagueGameUsers;
-      for (let i = 0; i < _data.length; i++) {
-        gameUsers.value.push(_data[i]);
-        if (gameUsers.value[i].card.name == "Agravain") {
-          assassinatorID.value = gameUsers.value[i].user.id;
-        }
-      }
-    });
-  } else if (gameStatus.value == "onEnd") {
-    {
-      const clearGameUsersResp = GetGameUsersWithCardByGame(gameID);
-      watch(clearGameUsersResp, (data) => {
-        gameUsers.value = [];
-        let _data = data.getGameUsersByGame;
-        for (let i = 0; i < _data.length; i++) {
-          gameUsers.value.push(_data[i]);
-        }
-      });
-    }
-  }
-});
+
 // 队长选人
 let pickedUserIDs = ref<string[]>([]);
 const pickUserID = (value: string) => {
@@ -163,6 +135,7 @@ const confirmSquads = () => {
     });
   }
 };
+
 // 用户的投票
 let myVote = ref<Vote>();
 // 当目前任务的状态时 voting，才可以看要不要投票
@@ -185,6 +158,7 @@ const vote = (pass: boolean, myVoteID: string) => {
     isPassed.value = data.pass;
   });
 };
+
 // 用户的行动
 let mySquad = ref<Squad>();
 // 当目前任务的状态时 acting，才可以看要不要行动
@@ -211,6 +185,89 @@ let act = (rat: boolean, mySquadID: string) => {
     isActed.value = data.acted;
     isRat.value = data.rat;
   });
+};
+
+// 刺杀或结算逻辑
+let assassinatorID = ref<string>();
+watch(gameStatus, (data) => {
+  console.log("游戏状态变==================================================");
+  console.log(gameStatus);
+  // 刺杀环境，全局揭示红方身份，ws 实时获取刺杀结果，刺杀完成时 gameStatus切换到结算状态
+  let assassinationFetchEnable = ref<boolean>(true);
+  if (gameStatus.value == "onAssassination") {
+    const vagueGameUserResp = GetVagueGameUsers(gameID);
+    watch(vagueGameUserResp, (data) => {
+      gameUsers.value = [];
+      let _data = data.getVagueGameUsers;
+      for (let i = 0; i < _data.length; i++) {
+        gameUsers.value.push(_data[i]);
+        if (gameUsers.value[i].card.name == "Agravain") {
+          assassinatorID.value = gameUsers.value[i].user.id;
+        }
+      }
+      // 刺客本人不需要通过请求获取刺杀环节信息
+      watch(assassinatorID, () => {
+        if (assassinatorID.value == userID) {
+          assassinationFetchEnable.value = false;
+        }
+      });
+    });
+    // 获取刺杀环节实时信息更新
+    const assassinationResp = GetAssassinationByGame(
+      gameID,
+      assassinationFetchEnable
+    );
+    watch(assassinationResp, (data) => {
+      tempAssassinatedIDs.value = [];
+      let res = data.getAssassinationByGame;
+      let tempPickedIDs = res.tempPickedIDs;
+      for (let i = 0; i < tempPickedIDs.length; i++) {
+        tempAssassinatedIDs.value.push(tempPickedIDs[i]);
+      }
+      // 如果最终刺杀目标出现，则进入 onEnd 状态
+      if (res.theAssassinatedIDs.length != 0) {
+        assassinationFetchEnable.value = false;
+        gameStatus.value = "onEnd";
+      }
+    });
+  } else if (gameStatus.value == "onEnd") {
+    // 结算，全局揭示所有身份
+    const clearGameUsersResp = GetGameUsersWithCardByGame(gameID);
+    watch(clearGameUsersResp, (data) => {
+      gameUsers.value = [];
+      let _data = data.getGameUsersByGame;
+      for (let i = 0; i < _data.length; i++) {
+        gameUsers.value.push(_data[i]);
+      }
+    });
+  }
+});
+// 刺客选人
+const aimTarget = (value: string) => {
+  tempAssassinatedIDs.value.push(value);
+};
+const cancelTarget = (value: string) => {
+  let i = tempAssassinatedIDs.value.indexOf(value);
+  tempAssassinatedIDs.value.splice(i, 1);
+};
+// 确认刺杀
+const confirmAssassination = () => {
+  // 检查是否选好所需人数
+  if (assassinChance == tempAssassinatedIDs.value.length) {
+    Assassinate(gameID, tempAssassinatedIDs.value)
+      .then((data) => {
+        console.log(data);
+        gameStatus.value = "onEnd";
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  } else {
+    ElMessage({
+      type: "warning",
+      message: `请瞄准${assassinChance}位玩家`,
+    });
+  }
 };
 </script>
 
@@ -320,13 +377,21 @@ let act = (rat: boolean, mySquadID: string) => {
               userID == assassinatorID &&
               gameStatus == `onAssassination` &&
               tempAssassinatedIDs.length < assassinChance &&
-              gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].card.name == `Merlin` &&
+              gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].card.name ==
+                `Merlin` &&
               !tempAssassinatedIDs.includes(
                 gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
               )
             "
           >
-            瞄准
+            <el-button
+              @click="
+                aimTarget(
+                  gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
+                )
+              "
+              >瞄准</el-button
+            >
           </div>
           <div
             v-else-if="
@@ -337,7 +402,14 @@ let act = (rat: boolean, mySquadID: string) => {
               )
             "
           >
-            放过
+            <el-button
+              @click="
+                cancelTarget(
+                  gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
+                )
+              "
+              >放过</el-button
+            >
           </div>
         </div>
       </div>
@@ -372,7 +444,12 @@ let act = (rat: boolean, mySquadID: string) => {
         </div>
         <div v-else>请等待任务小队行动</div>
       </div>
-      <div v-else-if="gameStatus == `onAssassination`">刺杀环节</div>
+      <div v-else-if="gameStatus == `onAssassination`">
+        <div v-if="userID == assassinatorID">
+          <el-button @click="confirmAssassination()">刺杀</el-button>
+        </div>
+        <div v-else>刺杀环节</div>
+      </div>
       <div v-else-if="gameStatus == `onEnd`">返回房间</div>
     </el-footer>
   </el-container>

@@ -42,6 +42,14 @@ const leaveRoom = () => {
   })
 }
 
+router.push({
+  path: "/game",
+  query: {
+    gameID: "1618249455852920832",
+    assassinChance: 1
+  }
+})
+
 // 获取正在进行中的游戏
 let fetchingGame = ref<boolean>(true)
 const ongoingGameResp = GetRoomOngoingGame(roomID, fetchingGame)
@@ -56,7 +64,7 @@ watch(
         path: "/game",
         query: {
           gameID: data.getRoomOngoingGame.id,
-          assassinChance: data.getRoomOngoingGame.assassinChance
+          assassinChance: parseInt(data.getRoomOngoingGame.assassinChance)
         }
       })
     }
