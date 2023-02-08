@@ -26,6 +26,7 @@ import {
   getAvatarPathByCardName,
   getAvatarPathByUserIDAndNumber,
 } from "../logic/game";
+import sheriffAvatar from "../assets/avatars/sheriff.svg"
 
 // 在游戏中维持着 gameID
 const props = defineProps<{
@@ -239,14 +240,14 @@ let act = (rat: boolean, mySquadID: string) => {
     <el-main>
       <div class="gameUserRow" v-for="i in midGameUsersCount" :key="i">
         <div v-for="(j, idx) in 2" :key="j">
-          <div v-if="gameStatus == `onMission`">
-            <!-- 队长固定头像 -->
+          <div v-if="gameStatus == `onAssassination`">
+            <!-- 每轮的队长固定头像 -->
             <el-avatar
               v-if="
                 currentMission?.leaderID ==
                 gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
               "
-              src="src/assets/avatars/sheriff.svg"
+              :src="sheriffAvatar"
             />
             <!-- 随机普通头像 -->
             <el-avatar
