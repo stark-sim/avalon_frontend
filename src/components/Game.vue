@@ -240,7 +240,7 @@ let act = (rat: boolean, mySquadID: string) => {
     <el-main>
       <div class="gameUserRow" v-for="i in midGameUsersCount" :key="i">
         <div v-for="(j, idx) in 2" :key="j">
-          <div v-if="gameStatus == `onAssassination`">
+          <div v-if="gameStatus == `onMission`">
             <!-- 每轮的队长固定头像 -->
             <el-avatar
               v-if="

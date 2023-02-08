@@ -1,5 +1,10 @@
 import { Ref } from "vue";
 import { Mission } from "../gqls/mission";
+import missionOne from "../assets/missions/_1.svg";
+import missionTwo from "../assets/missions/_2.svg";
+import missionThree from "../assets/missions/_3.svg";
+import missionFour from "../assets/missions/_4.svg";
+import missionFive from "../assets/missions/_5.svg";
 
 const shouldUpdateCurrenMission = (
   currentMission: Ref<Mission | undefined>,
@@ -52,7 +57,20 @@ const shouldUpdateCurrenMission = (
 };
 
 const getMissionAvatarPath = (sequence: number): string => {
-    return "src/assets/missions/_" + sequence + ".svg"
-}
+  switch (sequence) {
+    case 1:
+      return missionOne;
+    case 2:
+      return missionTwo;
+    case 3:
+      return missionThree;
+    case 4:
+      return missionFour;
+    case 5:
+      return missionFive;
+    default:
+      return "";
+  }
+};
 
-export {shouldUpdateCurrenMission, getMissionAvatarPath}
+export { shouldUpdateCurrenMission, getMissionAvatarPath };
