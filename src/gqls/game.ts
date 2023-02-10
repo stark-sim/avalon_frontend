@@ -96,6 +96,7 @@ interface Card {
   id: string;
   role: string;
   name: string;
+  red: boolean;
 }
 
 interface GameUser {
@@ -246,6 +247,7 @@ const GET_ONES_CARD_IN_GAME = gql`
       name
       role
       tale
+      red
     }
   }
 `;
@@ -266,6 +268,34 @@ const GetOnesCardInGame = (userID: string, gameID: string) => {
   return result;
 };
 
+interface OtherView {
+  userID: string;
+  type: string;
+}
+
+const VIEW_OTHERS_IN_GAME = gql`
+  query ($req: GameUserRequest!) {
+    viewOthersInGame(req: $req) {
+      userID
+      type
+    }
+  }
+`;
+
+const ViewOthersInGame = (userID: string, gameID: string) => {
+  const { result } = useQuery(
+    VIEW_OTHERS_IN_GAME,
+    {
+      req: {
+        userID: userID,
+        gameID: gameID,
+      },
+    },
+    { clientId: "default" }
+  );
+  return result;
+};
+
 export {
   GetRoomOngoingGame,
   CreateGame,
@@ -275,5 +305,6 @@ export {
   Assassinate,
   GetAssassinationByGame,
   GetOnesCardInGame,
+  ViewOthersInGame,
 };
-export type { GameUser, Card };
+export type { GameUser, Card, OtherView };

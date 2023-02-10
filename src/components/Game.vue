@@ -10,6 +10,8 @@ import {
   Assassinate,
   GetAssassinationByGame,
   GetOnesCardInGame,
+  ViewOthersInGame,
+  OtherView,
 } from "../gqls/game";
 import {
   GetMissionsByGame,
@@ -57,13 +59,24 @@ watch(gameUsersResp, (data) => {
   }
   midGameUsersCount.value = gameUsers.value.length / 2;
 });
+// 获取可视的其他人的状态
+let othersViews = ref<OtherView[]>([])
+let othersViewMap = new Map();
+const othersViewResp = ViewOthersInGame(userID, gameID);
+watch(othersViewResp, (data) => {
+  let items = data.viewOthersInGame;
+  for (let i = 0; i < items.length; i++) {
+    othersViews.value.push(items[i])
+    othersViewMap.set(othersViews.value[i].userID, othersViews.value[i].type)
+  }
+});
 // 获取用户的卡牌
-let myCard = ref<Card>()
-const cardResp = GetOnesCardInGame(userID, gameID)
+let myCard = ref<Card>();
+const cardResp = GetOnesCardInGame(userID, gameID);
 watch(cardResp, (data) => {
   let _data = data.getOnesCardInGame;
-  myCard.value = _data
-})
+  myCard.value = _data;
+});
 // 获取这局游戏的任务状态
 let missions = ref<Mission[]>([]);
 let missionsFetchEnable = ref<boolean>(true);
@@ -184,7 +197,6 @@ watch(shouldFetchSquad, () => {
       isRat.value = data.getSquadInMission.rat;
       shouldAct.value = true;
     }
-    console.log(mySquad);
   });
 });
 // 行动
@@ -199,7 +211,7 @@ let act = (rat: boolean, mySquadID: string) => {
 // 刺杀或结算逻辑
 let assassinatorID = ref<string>();
 watch(gameStatus, (data) => {
-  console.log("游戏状态变==================================================");
+  console.log("游戏状态变========");
   console.log(gameStatus);
   // 刺杀环境，全局揭示红方身份，ws 实时获取刺杀结果，刺杀完成时 gameStatus切换到结算状态
   let assassinationFetchEnable = ref<boolean>(true);
@@ -325,6 +337,7 @@ const confirmAssassination = () => {
                 )
               "
             />
+            <div>{{ othersViewMap.get(gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id) }}</div>
           </div>
           <div
             v-else-if="
@@ -447,7 +460,9 @@ const confirmAssassination = () => {
             <div v-else>已完成任务</div>
           </div>
           <div v-else>
-            <el-button @click="act(true, mySquad!.id)">破坏</el-button>
+            <el-button v-if="myCard?.red" @click="act(true, mySquad!.id)"
+              >破坏</el-button
+            >
             <el-button @click="act(false, mySquad!.id)">通过</el-button>
           </div>
         </div>
@@ -459,7 +474,16 @@ const confirmAssassination = () => {
         </div>
         <div v-else>刺杀环节</div>
       </div>
-      <div v-else-if="gameStatus == `onEnd`"><el-button @click="()=>{router.back()}">返回房间</el-button></div>
+      <div v-else-if="gameStatus == `onEnd`">
+        <el-button
+          @click="
+            () => {
+              router.back();
+            }
+          "
+          >返回房间</el-button
+        >
+      </div>
     </el-footer>
   </el-container>
 </template>
