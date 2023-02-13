@@ -22,7 +22,7 @@ import {
   ActIt,
 } from "../gqls/mission";
 import { Mission, Vote, Squad } from "../gqls/mission";
-import { watch, ref, Ref } from "vue";
+import { watch, ref, Ref, onMounted } from "vue";
 import { ElMessage } from "element-plus";
 import {
   shouldUpdateCurrenMission,
@@ -52,13 +52,15 @@ if (userID == "") {
 // 获取这局游戏的用户，有排序
 let gameUsers = ref<GameUser[]>([]);
 let midGameUsersCount = ref<number>(0);
-const gameUsersResp = GetGameUsersByGame(gameID);
-watch(gameUsersResp, (data) => {
-  let _data = data.getGameUsersByGame;
-  for (let i = 0; i < _data.length; i++) {
-    gameUsers.value?.push(_data[i]);
-  }
-  midGameUsersCount.value = gameUsers.value.length / 2;
+onMounted(() => {
+  const gameUsersResp = GetGameUsersByGame(gameID);
+  watch(gameUsersResp, (data) => {
+    let _data = data.getGameUsersByGame;
+    for (let i = 0; i < _data.length; i++) {
+      gameUsers.value?.push(_data[i]);
+    }
+    midGameUsersCount.value = gameUsers.value.length / 2;
+  });
 });
 // 获取可视的其他人的状态
 let othersViews = ref<OtherView[]>([]);
