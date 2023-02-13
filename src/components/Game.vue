@@ -33,6 +33,7 @@ import {
   getAvatarPathByUserIDAndNumber,
 } from "../logic/game";
 import sheriffAvatar from "../assets/avatars/sheriff.svg";
+import { computed } from "@vue/reactivity";
 
 // 在游戏中维持着 gameID
 const props = defineProps<{
@@ -60,14 +61,14 @@ watch(gameUsersResp, (data) => {
   midGameUsersCount.value = gameUsers.value.length / 2;
 });
 // 获取可视的其他人的状态
-let othersViews = ref<OtherView[]>([])
+let othersViews = ref<OtherView[]>([]);
 let othersViewMap = new Map();
 const othersViewResp = ViewOthersInGame(userID, gameID);
 watch(othersViewResp, (data) => {
   let items = data.viewOthersInGame;
   for (let i = 0; i < items.length; i++) {
-    othersViews.value.push(items[i])
-    othersViewMap.set(othersViews.value[i].userID, othersViews.value[i].type)
+    othersViews.value.push(items[i]);
+    othersViewMap.set(othersViews.value[i].userID, othersViews.value[i].type);
   }
 });
 // 获取用户的卡牌
@@ -290,6 +291,31 @@ const confirmAssassination = () => {
     });
   }
 };
+// 头像颜色，标记红蓝
+let redAvatar = {
+  "border-color": "red",
+  "border-width": "1px",
+  "border-style": "solid",
+};
+let blueAvatar = {
+  "border-color": "blue",
+  "border-width": "1px",
+  "border-style": "solid",
+};
+let questionAvatar = {
+  "border-color": "red red blue blue",
+  "border-width": "1px",
+  "border-style": "solid",
+};
+const avatarStyle = (roleType: string | undefined) => {
+  if (roleType == "RED") {
+    return redAvatar;
+  } else if (roleType == "BLUE") {
+    return blueAvatar;
+  } else if (roleType == "UNKNOWN") {
+    return questionAvatar;
+  }
+};
 </script>
 
 <template>
@@ -326,6 +352,14 @@ const confirmAssassination = () => {
                 gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
               "
               :src="sheriffAvatar"
+              :style="
+                avatarStyle(
+                  othersViewMap.get(
+                    gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
+                  )
+                )
+              "
+              class="border border-3"
             />
             <!-- 随机普通头像 -->
             <el-avatar
@@ -336,8 +370,14 @@ const confirmAssassination = () => {
                   gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].number
                 )
               "
+              :style="
+                avatarStyle(
+                  othersViewMap.get(
+                    gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
+                  )
+                )
+              "
             />
-            <div>{{ othersViewMap.get(gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id) }}</div>
           </div>
           <div
             v-else-if="
