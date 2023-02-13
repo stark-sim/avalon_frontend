@@ -98,4 +98,30 @@ const getAvatarPathByCardName = (cardName: string): string => {
   }
 };
 
-export { getAvatarPathByUserIDAndNumber, getAvatarPathByCardName };
+// 头像颜色，标记红蓝
+let redAvatar = {
+  "border-color": "red",
+  "border-width": "1px",
+  "border-style": "solid",
+};
+let blueAvatar = {
+  "border-color": "blue",
+  "border-width": "1px",
+  "border-style": "solid",
+};
+let questionAvatar = {
+  "border-color": "red red blue blue",
+  "border-width": "1px",
+  "border-style": "solid",
+};
+const avatarStyle = (roleType: string | undefined) => {
+  if (roleType == "RED") {
+    return redAvatar;
+  } else if (roleType == "BLUE") {
+    return blueAvatar;
+  } else if (roleType == "UNKNOWN") {
+    return questionAvatar;
+  }
+};
+
+export { getAvatarPathByUserIDAndNumber, getAvatarPathByCardName, avatarStyle };

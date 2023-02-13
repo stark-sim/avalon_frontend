@@ -31,9 +31,9 @@ import {
 import {
   getAvatarPathByCardName,
   getAvatarPathByUserIDAndNumber,
+  avatarStyle,
 } from "../logic/game";
 import sheriffAvatar from "../assets/avatars/sheriff.svg";
-import { computed } from "@vue/reactivity";
 
 // 在游戏中维持着 gameID
 const props = defineProps<{
@@ -289,31 +289,6 @@ const confirmAssassination = () => {
       type: "warning",
       message: `请瞄准${assassinChance}位玩家`,
     });
-  }
-};
-// 头像颜色，标记红蓝
-let redAvatar = {
-  "border-color": "red",
-  "border-width": "1px",
-  "border-style": "solid",
-};
-let blueAvatar = {
-  "border-color": "blue",
-  "border-width": "1px",
-  "border-style": "solid",
-};
-let questionAvatar = {
-  "border-color": "red red blue blue",
-  "border-width": "1px",
-  "border-style": "solid",
-};
-const avatarStyle = (roleType: string | undefined) => {
-  if (roleType == "RED") {
-    return redAvatar;
-  } else if (roleType == "BLUE") {
-    return blueAvatar;
-  } else if (roleType == "UNKNOWN") {
-    return questionAvatar;
   }
 };
 </script>
