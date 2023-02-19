@@ -304,7 +304,8 @@ const confirmAssassination = () => {
           <div
             v-if="
               mission.sequence == currentMission?.sequence &&
-              mission.status != `closed`
+              mission.status != `closed` &&
+              gameStatus == `onMission`
             "
           >
             <el-avatar
@@ -376,114 +377,120 @@ const confirmAssassination = () => {
             {{ gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.name }}
           </div>
           <!-- 选人刺杀等动作 -->
-          <div
-            v-if="
-              currentMission?.leaderID == userID &&
-              currentMissionStatus == `picking` &&
-              pickedUserIDs.length < currentMission?.capacity &&
-              !pickedUserIDs.includes(
-                gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
-              )
-            "
-          >
-            <el-button
-              @click="
-                pickUserID(
+          <div v-if="gameStatus == `onMission`">
+            <div
+              v-if="
+                currentMission?.leaderID == userID &&
+                currentMissionStatus == `picking` &&
+                pickedUserIDs.length < currentMission?.capacity &&
+                !pickedUserIDs.includes(
                   gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
                 )
               "
-              >选择</el-button
             >
+              <el-button
+                @click="
+                  pickUserID(
+                    gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
+                  )
+                "
+                >选择</el-button
+              >
+            </div>
+            <div
+              v-else-if="
+                pickedUserIDs.includes(
+                  gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
+                )
+              "
+            >
+              <el-button
+                @click="
+                  unpickUserID(
+                    gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
+                  )
+                "
+                >取消</el-button
+              >
+            </div>
           </div>
-          <div
-            v-else-if="
-              pickedUserIDs.includes(
-                gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
-              )
-            "
-          >
-            <el-button
-              @click="
-                unpickUserID(
+          <div v-else-if="gameStatus == `onAssassination`">
+            <div
+              v-if="
+                userID == assassinatorID &&
+                tempAssassinatedIDs.length < assassinChance &&
+                gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].card.name ==
+                  `Merlin` &&
+                !tempAssassinatedIDs.includes(
                   gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
                 )
               "
-              >取消</el-button
             >
-          </div>
-          <div
-            v-else-if="
-              userID == assassinatorID &&
-              gameStatus == `onAssassination` &&
-              tempAssassinatedIDs.length < assassinChance &&
-              gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].card.name ==
-                `Merlin` &&
-              !tempAssassinatedIDs.includes(
-                gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
-              )
-            "
-          >
-            <el-button
-              @click="
-                aimTarget(
+              <el-button
+                @click="
+                  aimTarget(
+                    gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
+                  )
+                "
+                >瞄准</el-button
+              >
+            </div>
+            <div
+              v-else-if="
+                userID == assassinatorID &&
+                tempAssassinatedIDs.includes(
                   gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
                 )
               "
-              >瞄准</el-button
             >
-          </div>
-          <div
-            v-else-if="
-              userID == assassinatorID &&
-              gameStatus == `onAssassination` &&
-              tempAssassinatedIDs.includes(
-                gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
-              )
-            "
-          >
-            <el-button
-              @click="
-                cancelTarget(
-                  gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
-                )
-              "
-              >放过</el-button
-            >
+              <el-button
+                @click="
+                  cancelTarget(
+                    gameUsers[i - 1 + (j == 1 ? 0 : midGameUsersCount)].user.id
+                  )
+                "
+                >放过</el-button
+              >
+            </div>
           </div>
         </div>
       </div>
     </el-main>
     <el-footer>
-      <div v-if="currentMission?.status == `picking`">
-        <div v-if="currentMission?.leaderID == userID">
-          <el-button type="primary" @click="confirmSquads">确认选队</el-button>
+      <div v-if="gameStatus == `onMission`">
+        <div v-if="currentMission?.status == `picking`">
+          <div v-if="currentMission?.leaderID == userID">
+            <el-button type="primary" @click="confirmSquads"
+              >确认选队</el-button
+            >
+          </div>
+          <div v-else>请等待队长选择任务小队</div>
         </div>
-        <div v-else>请等待队长选择任务小队</div>
-      </div>
-      <div v-else-if="currentMissionStatus == `voting`">
-        <div v-if="isVoted">
-          <div v-if="isPassed">已表示通过</div>
-          <div v-else>已表示拒绝</div>
-        </div>
-        <div v-else>
-          <el-button @click="vote(true, myVote!.id)">同意</el-button>
-          <el-button @click="vote(false, myVote!.id)">否决</el-button>
-        </div>
-      </div>
-      <div v-else-if="currentMissionStatus == `acting`">
-        <div v-if="shouldAct">
-          <div v-if="isActed">
-            <div v-if="isRat">已破坏任务</div>
-            <div v-else>已完成任务</div>
+        <div v-else-if="currentMissionStatus == `voting`">
+          <div v-if="isVoted">
+            <div v-if="isPassed">已表示通过</div>
+            <div v-else>已表示拒绝</div>
           </div>
           <div v-else>
-            <el-button v-if="myCard?.red" @click="act(true, mySquad!.id)"
-              >破坏</el-button
-            >
-            <el-button @click="act(false, mySquad!.id)">通过</el-button>
+            <el-button @click="vote(true, myVote!.id)">同意</el-button>
+            <el-button @click="vote(false, myVote!.id)">否决</el-button>
           </div>
         </div>
-        <div v-else>请等待任务小队行动</div>
+        <div v-else-if="currentMissionStatus == `acting`">
+          <div v-if="shouldAct">
+            <div v-if="isActed">
+              <div v-if="isRat">已破坏任务</div>
+              <div v-else>已完成任务</div>
+            </div>
+            <div v-else>
+              <el-button v-if="myCard?.red" @click="act(true, mySquad!.id)"
+                >破坏</el-button
+              >
+              <el-button @click="act(false, mySquad!.id)">通过</el-button>
+            </div>
+          </div>
+          <div v-else>请等待任务小队行动</div>
+        </div>
       </div>
       <div v-else-if="gameStatus == `onAssassination`">
         <div v-if="userID == assassinatorID">
@@ -509,6 +516,7 @@ const confirmAssassination = () => {
 .missionStyle {
   flex-direction: column;
 }
+
 .missionStyle:hover {
   filter: drop-shadow(0 0 2em #646cffaa);
 }
