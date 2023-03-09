@@ -8,6 +8,7 @@ import { ArrowRight } from "@element-plus/icons-vue";
 import { LeaveRoom } from "../gqls/room";
 import { GetRoomOngoingGame, CreateGame } from "../gqls/game";
 import { getAvatarPathByUserIDAndNumber } from "../logic/game";
+import { fa } from "element-plus/es/locale";
 
 // 在房间中维持着 roomID
 const props = defineProps<{
@@ -25,12 +26,18 @@ let fetchingUsers = ref<boolean>(true);
 const response = GetRoomUsers(roomID, fetchingUsers);
 let midRoomUsersCount = ref<number>(0);
 
+// 是否为房主，房主可以开始游戏，配置游戏设置
+let isHost = ref<boolean>(false)
 // 刷新用户列表
 watch(response, (data) => {
   roomUsers.value = [];
   let _data = data.getRoomUsers;
   for (let i = 0; i < _data.length; i++) {
     roomUsers.value?.push(_data[i]);
+    // 发现自己是房主
+    if (roomUsers.value[i].host && roomUsers.value[i].user.id == userID) {
+      isHost.value = true
+    }
   }
   midRoomUsersCount.value = roomUsers.value.length / 2;
 });
@@ -98,7 +105,7 @@ const createGame = () => {
       </div>
     </el-main>
     <el-footer>
-      <el-button @click="createGame"> 开始游戏 </el-button>
+      <el-button v-if="isHost" @click="createGame"> 开始游戏 </el-button>
     </el-footer>
   </el-container>
 </template>

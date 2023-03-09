@@ -12,6 +12,8 @@ import {
   GetOnesCardInGame,
   ViewOthersInGame,
   OtherView,
+  TerminateGame,
+  GetGame,
 } from "../gqls/game";
 import {
   GetMissionsByGame,
@@ -34,6 +36,7 @@ import {
   avatarStyle,
 } from "../logic/game";
 import sheriffAvatar from "../assets/avatars/sheriff.svg";
+import { fa } from "element-plus/es/locale";
 
 // 在游戏中维持着 gameID
 const props = defineProps<{
@@ -91,6 +94,7 @@ let currentMissionStatus = ref<string>("picking");
 let gameStatus = ref<string>("onMission"); // onMission onAssassination onEnd
 let failedCount = 0;
 let closedCount = 0;
+let isGameClosed = ref<boolean>(false);
 watch(missionsResp, (data) => {
   missions.value = [];
   let tempMissions = data.getMissionsByGame;
@@ -293,12 +297,41 @@ const confirmAssassination = () => {
     });
   }
 };
+// 手动中止游戏
+const terminateGame = () => {
+  TerminateGame(gameID)
+    .then((data) => {
+      console.log(data);
+      isGameClosed.value = true;
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+};
+// 获取游戏是否结束
+let getGameEnabled = ref<boolean>(true);
+const getGameResp = GetGame(gameID, getGameEnabled);
+watch(getGameResp, (data) => {
+  console.log(data)
+  if (data.getGame.endBy != "none") {
+    isGameClosed.value = true;
+    getGameEnabled.value = false;
+  }
+});
+// 游戏结束时，退出房间
+watch(isGameClosed, () => {
+  if (isGameClosed) {
+    router.back();
+  }
+});
 </script>
 
 <template>
   <el-container>
     <el-header>
-      <div>游戏 ID: {{ gameID }}</div>
+      <div>
+        <el-button size="small" @click="terminateGame()">中止游戏</el-button>
+      </div>
       <el-space direction="horizontal" wrap>
         <div class="missionStyle" v-for="mission in missions" :key="mission.id">
           <div

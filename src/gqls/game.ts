@@ -296,6 +296,59 @@ const ViewOthersInGame = (userID: string, gameID: string) => {
   return result;
 };
 
+const TERMIATE_GAME = gql`
+  mutation ($req: GameRequest!) {
+    terminateGame(req: $req) {
+      id
+      endBy
+      createdAt
+    }
+  }
+`;
+const TerminateGame = async (gameID: string) => {
+  const { mutate: terminateGame } = useMutation(TERMIATE_GAME, () => ({
+    variables: {
+      req: {
+        id: gameID,
+      },
+    },
+    clientId: "default",
+  }));
+  try {
+    const response = await terminateGame();
+    const data = response?.data;
+    return data.terminateGame;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+};
+
+const GET_GAME = gql`
+  subscription ($req: GameRequest!) {
+    getGame(req: $req) {
+      id
+      endBy
+    }
+  }
+`;
+
+const GetGame = (gameId: string, enabled: Ref<boolean>) => {
+  const { result } = useSubscription(
+    GET_GAME,
+    () => ({
+      req: {
+        id: gameId,
+      },
+    }),
+    () => ({
+      clientId: "avalon",
+      enabled: enabled.value,
+    })
+  );
+  return result;
+};
+
 export {
   GetRoomOngoingGame,
   CreateGame,
@@ -306,5 +359,7 @@ export {
   GetAssassinationByGame,
   GetOnesCardInGame,
   ViewOthersInGame,
+  TerminateGame,
+  GetGame,
 };
 export type { GameUser, Card, OtherView };

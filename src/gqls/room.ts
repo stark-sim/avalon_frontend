@@ -102,6 +102,7 @@ interface RoomUser {
   roomID: string;
   user: User;
   createdAt: Date;
+  host: boolean;
 }
 
 const GET_ROOM_USERS = gql`
