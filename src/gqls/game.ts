@@ -96,6 +96,7 @@ interface Card {
   id: string;
   role: string;
   name: string;
+  tale: string;
   red: boolean;
 }
 

@@ -168,5 +168,31 @@ const LeaveRoom = async (userID: string, roomID: string) => {
   }
 };
 
-export { JoinRoom, CreateRoom, GetRoomUsers, LeaveRoom, GetJoinedRoom };
+const GET_GAMES = gql`
+  query {
+    cards {
+      id
+      name
+      role
+      tale
+      red
+    }
+  }
+`;
+
+const GetGames = () => {
+  const { result } = useQuery(GET_GAMES, null, {
+    clientId: "default",
+  });
+  return result;
+};
+
+export {
+  JoinRoom,
+  CreateRoom,
+  GetRoomUsers,
+  LeaveRoom,
+  GetJoinedRoom,
+  GetGames,
+};
 export type { RoomUser, User };
