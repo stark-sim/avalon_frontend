@@ -10,6 +10,7 @@ import { GetRoomOngoingGame, CreateGame, Card } from "../gqls/game";
 import { getAvatarPathByUserIDAndNumber } from "../logic/game";
 import type { FormInstance, FormRules } from "element-plus";
 import { getDefaultMissionCapacity } from "../logic/mission";
+import { computed } from "@vue/reactivity";
 
 // 在房间中维持着 roomID
 const props = defineProps<{
@@ -22,10 +23,10 @@ if (userID == "") {
 }
 
 // Subscription 来更新房间用户
-let roomUsers = ref<RoomUser[]>([]);
+let leftRoomUsers = ref<RoomUser[]>([]);
+let rightRoomUsers = ref<RoomUser[]>([]);
 let fetchingUsers = ref<boolean>(true);
 const response = GetRoomUsers(roomID, fetchingUsers);
-let midRoomUsersCount = ref<number>(0);
 // 需要初始值来让选择人数的组件不会在一开始报错
 let roomUsersCount = ref<number>(5);
 
@@ -33,17 +34,21 @@ let roomUsersCount = ref<number>(5);
 let isHost = ref<boolean>(false);
 // 刷新用户列表
 watch(response, (data) => {
-  roomUsers.value = [];
+  leftRoomUsers.value = [];
+  rightRoomUsers.value = [];
   let _data = data.getRoomUsers;
   roomUsersCount.value = _data.length;
   for (let i = 0; i < _data.length; i++) {
-    roomUsers.value?.push(_data[i]);
+    if (i % 2 == 0) {
+      leftRoomUsers.value.push(_data[i]);
+    } else {
+      rightRoomUsers.value.push(_data[i]);
+    }
     // 发现自己是房主
-    if (roomUsers.value[i].host && roomUsers.value[i].user.id == userID) {
+    if (_data[i].host && _data[i].user.id == userID) {
       isHost.value = true;
     }
   }
-  midRoomUsersCount.value = roomUsers.value.length / 2;
 });
 
 // 离开房间，回到主页
@@ -101,27 +106,39 @@ const ruleForm = reactive({
   missionOptions: [
     {
       sequence: 1,
-      capacity: getDefaultMissionCapacity(1, roomUsersCount.value),
+      capacity: computed<number>(() => {
+        return getDefaultMissionCapacity(1, roomUsersCount.value);
+      }),
       protected: false,
     },
     {
       sequence: 2,
-      capacity: getDefaultMissionCapacity(2, roomUsersCount.value),
+      capacity: computed<number>(() => {
+        return getDefaultMissionCapacity(2, roomUsersCount.value);
+      }),
       protected: false,
     },
     {
       sequence: 3,
-      capacity: getDefaultMissionCapacity(3, roomUsersCount.value),
+      capacity: computed<number>(() => {
+        return getDefaultMissionCapacity(3, roomUsersCount.value);
+      }),
       protected: false,
     },
     {
       sequence: 4,
-      capacity: getDefaultMissionCapacity(4, roomUsersCount.value),
-      protected: roomUsersCount.value > 6 ? true : false,
+      capacity: computed<number>(() => {
+        return getDefaultMissionCapacity(4, roomUsersCount.value);
+      }),
+      protected: computed<boolean>(() => {
+        return roomUsersCount.value > 6;
+      }),
     },
     {
       sequence: 5,
-      capacity: getDefaultMissionCapacity(5, roomUsersCount.value),
+      capacity: computed<number>(() => {
+        return getDefaultMissionCapacity(5, roomUsersCount.value);
+      }),
       protected: false,
     },
   ],
@@ -162,7 +179,7 @@ const resetForm = (formEl: FormInstance | undefined) => {
   formEl.resetFields();
 };
 
-const assassinChanceOptions = Array.from({ length: 5 }).map((_, idx) => ({
+const assassinChanceOptions = Array.from({ length: 8 }).map((_, idx) => ({
   value: `${idx + 1}`,
   label: `${idx + 1}`,
 }));
@@ -177,8 +194,26 @@ const assassinChanceOptions = Array.from({ length: 5 }).map((_, idx) => ({
         >退出房间</el-button
       >
     </el-header>
-    <el-container>
-      <el-aside width="200px">
+    <el-container class="mainContainer">
+      <!-- 左右展示玩家 -->
+      <el-aside>
+        <div
+          class="roomUserRow"
+          v-for="(roomUser, index) in leftRoomUsers"
+          :key="roomUser.id"
+        >
+          <!-- 随机普通头像 -->
+          <el-avatar
+            :src="getAvatarPathByUserIDAndNumber(roomUser.user.id, index)"
+          />
+          <!-- 名字 -->
+          <div>
+            {{ roomUser.user.name }}
+          </div>
+        </div>
+      </el-aside>
+      <!-- 展示游戏配置 -->
+      <el-main>
         <el-form
           label-position="top"
           ref="ruleFormRef"
@@ -245,35 +280,25 @@ const assassinChanceOptions = Array.from({ length: 5 }).map((_, idx) => ({
             <el-button @click="resetForm(ruleFormRef)">恢复默认</el-button>
           </el-form-item>
         </el-form>
-      </el-aside>
-      <el-container>
-        <!-- 展示玩家 -->
-        <el-main>
-          <div class="roomUserRow" v-for="i in midRoomUsersCount" :key="i">
-            <div v-for="(j, idx) in 2" :key="j">
-              <!-- 随机普通头像 -->
-              <el-avatar
-                :src="
-                  getAvatarPathByUserIDAndNumber(
-                    roomUsers[i - 1 + (j == 1 ? 0 : midRoomUsersCount)].user.id,
-                    i + (j == 1 ? 0 : midRoomUsersCount)
-                  )
-                "
-              />
-              <!-- 名字 -->
-              <div>
-                {{
-                  roomUsers[i - 1 + (j == 1 ? 0 : midRoomUsersCount)].user.name
-                }}
-              </div>
-            </div>
+        <el-button v-if="isHost" @click="createGame"> 开始游戏 </el-button>
+      </el-main>
+
+      <el-aside>
+        <div
+          class="roomUserRow"
+          v-for="(roomUser, index) in rightRoomUsers"
+          :key="roomUser.id"
+        >
+          <!-- 随机普通头像 -->
+          <el-avatar
+            :src="getAvatarPathByUserIDAndNumber(roomUser.user.id, index + 1)"
+          />
+          <!-- 名字 -->
+          <div>
+            {{ roomUser.user.name }}
           </div>
-        </el-main>
-        <el-footer>
-          <el-button v-if="isHost" @click="createGame"> 开始游戏 </el-button>
-        </el-footer>
-      </el-container>
-      <el-aside width="100px"> 右侧 </el-aside>
+        </div>
+      </el-aside>
     </el-container>
   </el-container>
 </template>
@@ -281,9 +306,7 @@ const assassinChanceOptions = Array.from({ length: 5 }).map((_, idx) => ({
 <style scoped>
 .roomUserRow {
   display: flex;
-  justify-content: space-between;
-  width: 100%;
-  /* flex-wrap: wrap; */
+  margin-bottom: 10%;
 }
 
 .scrollbar-demo-item {

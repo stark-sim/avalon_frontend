@@ -74,6 +74,7 @@ const getMissionAvatarPath = (sequence: number): string => {
 };
 
 const getDefaultMissionCapacity = (sequence: number, usersCount: number): number => {
+  console.log(usersCount)
   if (usersCount < 5) {
     return 0
   }
@@ -111,7 +112,7 @@ const getDefaultMissionCapacity = (sequence: number, usersCount: number): number
         case 2: return 4
         case 3: return 4
         case 4: return 5
-        case 4: return 5
+        case 5: return 5
       }
     }
     case 9: {
