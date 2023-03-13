@@ -116,6 +116,7 @@ const GET_ROOM_USERS = gql`
       }
       roomID
       createdAt
+      host
     }
   }
 `;
