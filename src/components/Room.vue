@@ -9,6 +9,7 @@ import { LeaveRoom } from "../gqls/room";
 import { GetRoomOngoingGame, CreateGame, Card } from "../gqls/game";
 import { getAvatarPathByUserIDAndNumber } from "../logic/game";
 import type { FormInstance, FormRules } from "element-plus";
+import { getDefaultMissionCapacity } from "../logic/mission";
 
 // 在房间中维持着 roomID
 const props = defineProps<{
@@ -25,7 +26,8 @@ let roomUsers = ref<RoomUser[]>([]);
 let fetchingUsers = ref<boolean>(true);
 const response = GetRoomUsers(roomID, fetchingUsers);
 let midRoomUsersCount = ref<number>(0);
-let roomUsersCount = ref<number>(0);
+// 需要初始值来让选择人数的组件不会在一开始报错
+let roomUsersCount = ref<number>(5);
 
 // 是否为房主，房主可以开始游戏，配置游戏设置
 let isHost = ref<boolean>(false);
@@ -78,60 +80,58 @@ const createGame = () => {
 
 // 角色卡牌可选项
 const cards = ref<Card[]>([]);
-let cardsResponse = GetGames()
+let cardsResponse = GetGames();
 watch(cardsResponse, (data) => {
   for (let i = 0; i < data.cards.length; i++) {
-    cards.value.push(data.cards[i])
+    cards.value.push(data.cards[i]);
   }
-})
+});
 
 // 游戏配置表单数据
 const formSize = ref("default");
 const ruleFormRef = ref<FormInstance>();
 const ruleForm = reactive({
-  name: "Hello",
-  region: "",
   assassinChance: 1,
-  date1: "",
-  date2: "",
   randomLeader: false,
-  cardIDs: [],
-  resource: "",
-  desc: "",
+  cardIDs: [
+    "1605836259502399488",
+    "1605836090014769152",
+    "1605836006992715776",
+  ],
+  missionOptions: [
+    {
+      sequence: 1,
+      capacity: getDefaultMissionCapacity(1, roomUsersCount.value),
+      protected: false,
+    },
+    {
+      sequence: 2,
+      capacity: getDefaultMissionCapacity(2, roomUsersCount.value),
+      protected: false,
+    },
+    {
+      sequence: 3,
+      capacity: getDefaultMissionCapacity(3, roomUsersCount.value),
+      protected: false,
+    },
+    {
+      sequence: 4,
+      capacity: getDefaultMissionCapacity(4, roomUsersCount.value),
+      protected: roomUsersCount.value > 6 ? true : false,
+    },
+    {
+      sequence: 5,
+      capacity: getDefaultMissionCapacity(5, roomUsersCount.value),
+      protected: false,
+    },
+  ],
 });
 
 const rules = reactive<FormRules>({
-  name: [
-    { required: true, message: "Please input Activity name", trigger: "blur" },
-    { min: 3, max: 5, message: "Length should be 3 to 5", trigger: "blur" },
-  ],
-  region: [
-    {
-      required: true,
-      message: "Please select Activity zone",
-      trigger: "change",
-    },
-  ],
   assassinChance: [
     {
       required: true,
       message: "请选择可刺杀次数",
-      trigger: "change",
-    },
-  ],
-  date1: [
-    {
-      type: "date",
-      required: true,
-      message: "Please pick a date",
-      trigger: "change",
-    },
-  ],
-  date2: [
-    {
-      type: "date",
-      required: true,
-      message: "Please pick a time",
       trigger: "change",
     },
   ],
@@ -143,19 +143,10 @@ const rules = reactive<FormRules>({
       trigger: "change",
     },
   ],
-  resource: [
-    {
-      required: true,
-      message: "Please select activity resource",
-      trigger: "change",
-    },
-  ],
-  desc: [
-    { required: true, message: "Please input activity form", trigger: "blur" },
-  ],
 });
 
 const submitForm = async (formEl: FormInstance | undefined) => {
+  console.log(ruleForm.cardIDs);
   if (!formEl) return;
   await formEl.validate((valid, fields) => {
     if (valid) {
@@ -175,7 +166,6 @@ const assassinChanceOptions = Array.from({ length: 5 }).map((_, idx) => ({
   value: `${idx + 1}`,
   label: `${idx + 1}`,
 }));
-
 </script>
 
 <template>
@@ -188,7 +178,7 @@ const assassinChanceOptions = Array.from({ length: 5 }).map((_, idx) => ({
       >
     </el-header>
     <el-container>
-      <el-aside width="500px">
+      <el-aside width="200px">
         <el-form
           label-position="top"
           ref="ruleFormRef"
@@ -199,69 +189,60 @@ const assassinChanceOptions = Array.from({ length: 5 }).map((_, idx) => ({
           :size="formSize"
           status-icon
         >
-          <el-form-item label="Activity name" prop="name">
-            <el-input v-model="ruleForm.name" />
-          </el-form-item>
-          <el-form-item label="Activity zone" prop="region">
-            <el-select v-model="ruleForm.region" placeholder="Activity zone">
-              <el-option label="Zone one" value="shanghai" />
-              <el-option label="Zone two" value="beijing" />
-            </el-select>
-          </el-form-item>
           <el-form-item label="刺杀机会" prop="assassinChance">
-            <el-select-v2
+            <el-slider
               v-model="ruleForm.assassinChance"
-              :options="assassinChanceOptions"
+              :step="1"
+              show-stops
+              :max="roomUsersCount - 1"
+              :min="1"
+              style="margin: 0 10%"
             />
-          </el-form-item>
-          <el-form-item label="Activity time" required>
-            <el-col :span="11">
-              <el-form-item prop="date1">
-                <el-date-picker
-                  v-model="ruleForm.date1"
-                  type="date"
-                  label="Pick a date"
-                  placeholder="Pick a date"
-                  style="width: 100%"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col class="text-center" :span="2">
-              <span class="text-gray-500">-</span>
-            </el-col>
-            <el-col :span="11">
-              <el-form-item prop="date2">
-                <el-time-picker
-                  v-model="ruleForm.date2"
-                  label="Pick a time"
-                  placeholder="Pick a time"
-                  style="width: 100%"
-                />
-              </el-form-item>
-            </el-col>
           </el-form-item>
           <el-form-item label="随机队长" prop="randomLeader">
             <el-switch v-model="ruleForm.randomLeader" />
           </el-form-item>
           <el-form-item label="选择角色" prop="cardIDs">
-            <el-checkbox-group style="display: flex; flex-direction: column" v-model="ruleForm.cardIDs" :min="roomUsersCount" :max="roomUsersCount">
-              <el-checkbox v-for="card in cards" :key="card.id" :label="card.role + ' ' + card.name" name="cardIDs" />
+            <el-checkbox-group
+              style="display: flex; flex-direction: column"
+              v-model="ruleForm.cardIDs"
+            >
+              <el-scrollbar height="100px">
+                <el-checkbox
+                  v-for="card in cards"
+                  :key="card.id"
+                  class="scrollbar-demo-item"
+                  :label="card.id"
+                  name="cardIDs"
+                  >{{ card.role + " " + card.name }}</el-checkbox
+                >
+              </el-scrollbar>
             </el-checkbox-group>
           </el-form-item>
-          <el-form-item label="Resources" prop="resource">
-            <el-radio-group v-model="ruleForm.resource">
-              <el-radio label="Sponsorship" />
-              <el-radio label="Venue" />
-            </el-radio-group>
-          </el-form-item>
-          <el-form-item label="Activity form" prop="desc">
-            <el-input v-model="ruleForm.desc" type="textarea" />
-          </el-form-item>
+          <el-scrollbar height="160px">
+            <el-card
+              shadow="hover"
+              v-for="i in 5"
+              :key="i"
+              style="margin: 2% 0; height: 150px"
+            >
+              <el-form-item label="出征人数" prop="missionOptions" size="small">
+                <el-select-v2
+                  v-model="ruleForm.missionOptions[i - 1].capacity"
+                  :options="assassinChanceOptions"
+                />
+              </el-form-item>
+              <el-form-item label="保护轮" prop="missionOptions" size="small">
+                <el-switch v-model="ruleForm.missionOptions[i - 1].protected" />
+              </el-form-item>
+            </el-card>
+          </el-scrollbar>
+
           <el-form-item>
             <el-button type="primary" @click="submitForm(ruleFormRef)">
               Create
             </el-button>
-            <el-button @click="resetForm(ruleFormRef)">Reset</el-button>
+            <el-button @click="resetForm(ruleFormRef)">恢复默认</el-button>
           </el-form-item>
         </el-form>
       </el-aside>
@@ -303,5 +284,17 @@ const assassinChanceOptions = Array.from({ length: 5 }).map((_, idx) => ({
   justify-content: space-between;
   width: 100%;
   /* flex-wrap: wrap; */
+}
+
+.scrollbar-demo-item {
+  display: flex;
+  align-items: center;
+  /* justify-content: center;
+  height: 50px;
+  margin: 10px;
+  text-align: center;
+  border-radius: 4px;
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary); */
 }
 </style>

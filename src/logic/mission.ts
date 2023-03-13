@@ -73,4 +73,76 @@ const getMissionAvatarPath = (sequence: number): string => {
   }
 };
 
-export { shouldUpdateCurrenMission, getMissionAvatarPath };
+const getDefaultMissionCapacity = (sequence: number, usersCount: number): number => {
+  if (usersCount < 5) {
+    return 0
+  }
+  switch (usersCount) {
+    case 5: {
+      switch (sequence) {
+        case 1: return 2
+        case 2: return 3
+        case 3: return 2
+        case 4: return 3
+        case 5: return 3
+      }
+    }
+    case 6: {
+      switch (sequence) {
+        case 1: return 2
+        case 2: return 3
+        case 3: return 4
+        case 4: return 3
+        case 5: return 4
+      }
+    }
+    case 7: {
+      switch (sequence) {
+        case 1: return 2
+        case 2: return 3
+        case 3: return 3
+        case 4: return 4
+        case 5: return 4
+      }
+    }
+    case 8: {
+      switch (sequence) {
+        case 1: return 3
+        case 2: return 4
+        case 3: return 4
+        case 4: return 5
+        case 4: return 5
+      }
+    }
+    case 9: {
+      switch (sequence) {
+        case 1: return 3
+        case 2: return 4
+        case 3: return 4
+        case 4: return 5
+        case 5: return 5
+      }
+    }
+    case 10: {
+      switch (sequence) {
+        case 1: return 3
+        case 2: return 4
+        case 3: return 4
+        case 4: return 5
+        case 5: return 5
+      }
+    }
+    default: {
+      switch (sequence) {
+        case 1: return 3
+        case 2: return 4
+        case 3: return 4
+        case 4: return 5
+        case 5: return 5
+        default: return 0
+      }
+    }
+  }
+}
+
+export { shouldUpdateCurrenMission, getMissionAvatarPath, getDefaultMissionCapacity };
