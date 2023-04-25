@@ -32,16 +32,16 @@ const getJoinedRoom = () => {
       router.push({
         path: "/room",
         query: {
-          roomID: data.getJoinedRoom.id
-        }
-      })
+          roomID: data.getJoinedRoom.id,
+        },
+      });
     }
   });
 };
 
 onMounted(() => {
-  getJoinedRoom()
-})
+  getJoinedRoom();
+});
 
 function logout() {
   deleteUserToken();

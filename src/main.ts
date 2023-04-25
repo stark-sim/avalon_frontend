@@ -19,23 +19,23 @@ const cache = new InMemoryCache();
 const superClient = new ApolloClient({
   cache,
   // uri: 'https://rickandmortyapi.com/graphql',
-  uri: "http://159.75.243.79:4001",
+  uri: "https://rosabi.cn/api/",
 });
 
 const casClient = new ApolloClient({
   cache,
-  uri: "http://159.75.243.79:8080/graphql",
+  uri: "https://rosabi.cn/cas/api/graphql",
 });
 
 // Create an http link:
 const httpLink = new HttpLink({
-  uri: "http://159.75.243.79:8082/graphql",
+  uri: "https://rosabi.cn/avalon/api/graphql",
 });
 
 // Create a WebSocket link:
 const wsLink = new GraphQLWsLink(
   createClient({
-    url: "ws://159.75.243.79:8082/graphql",
+    url: "wss://rosabi.cn/avalon/api/graphql",
     // lazy: false,
     on: {
       connecting: () => {
